@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<lucene_database> 
+  <database name="test" path="d:/test/testdatabase/"> 
+    <table name="table1" path="/table1/"> 
+      <column name="" type=""/>  
+      <column name="" type=""/> 
+    </table>  
+    <table name="" path=""></table>  
+    <table name="" path=""></table> 
+  </database>  
+  <database name="test1" Path="/d:/123/123/"/>
+</lucene_database>
