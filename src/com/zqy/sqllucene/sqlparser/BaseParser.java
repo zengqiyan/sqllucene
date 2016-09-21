@@ -105,7 +105,6 @@ import net.sf.jsqlparser.statement.update.Update;
 public class BaseParser implements SelectVisitor, FromItemVisitor, ExpressionVisitor, ItemsListVisitor, SelectItemVisitor, StatementVisitor{
 
     protected static final String NOT_SUPPORTED_YET = "Not supported yet.";
-    
     protected List<String> otherItemNames;
     protected String dataBaseName;
     public String getDataBaseName(){

@@ -27,6 +27,7 @@ import com.zqy.sqllucene.pojo.DataBase;
 import com.zqy.sqllucene.pojo.Field;
 import com.zqy.sqllucene.sqlparser.InsertParser;
 import com.zqy.sqllucene.util.CommonUtil;
+import com.zqy.sqllucene.util.LogUtil;
 
 public class InsertHandle {
 	 public void insert(String sql){
@@ -40,6 +41,9 @@ public class InsertHandle {
 	 public void insert(String dataBaseName,String tableName,List<Field> fields){
 	        IndexWriter writer = null;
 	        try{
+	        	LogUtil.printLog("插入数据开始...");
+	        	LogUtil.printLog("数据库："+dataBaseName);
+	        	LogUtil.printLog("表："+tableName);
 	            //1、创建Directory
 	        	DataBase dataBase = DataBaseDefaultConfig.getInstance().getDataBaseByName(dataBaseName);
 	        	String tablePath = dataBase.getPath()+"/"+tableName;
@@ -61,7 +65,9 @@ public class InsertHandle {
 	                //5、通过IndexWriter添加文档到索引中
 	                 doc.add(getField(field.getColumnName(), field.getType(), field.getValue()));  
 	            }
+	            writer.addDocument(doc);
 	            writer.commit();
+	            LogUtil.printLog("插入数据成功...");
 	        }catch(Exception e){
 	            e.printStackTrace();
 	        }finally{
@@ -76,6 +82,9 @@ public class InsertHandle {
 	 public void insert(String dataBaseName,String tableName,Object data){
 	        IndexWriter writer = null;
 	        try{
+	        	LogUtil.printLog("插入数据开始...");
+	        	LogUtil.printLog("数据库："+dataBaseName);
+	        	LogUtil.printLog("表："+tableName);
 	            //1、创建Directory
 	        	DataBase dataBase = DataBaseDefaultConfig.getInstance().getDataBaseByName(dataBaseName);
 	        	String tablePath = dataBase.getPath()+"/"+tableName;
@@ -89,7 +98,6 @@ public class InsertHandle {
 	        			DataBaseDefaultConfig.getInstance().getColumns(dataBaseName, tableName);
 	        	List<Field> fields= new ArrayList<Field>();
 	        	for(int i=0;i<reflectFields.length;i++){
-	        		System.out.println(reflectFields[i].getName());
 	        		for(int j=0;j<columnList.size();j++){
 	        			Column column = columnList.get(j);
 	        			if(column.getName().equals(reflectFields[i].getName())){
@@ -120,24 +128,26 @@ public class InsertHandle {
 	            }
 	            writer.addDocument(doc);
 	            writer.commit();
+	            LogUtil.printLog("插入数据成功...");
 	        }catch(Exception e){
 	            e.printStackTrace();
 	        }finally{
 	            //6、使用完成后需要将writer进行关闭
 	            try {
-	            	
 	                writer.close();
 	            } catch (IOException e) {
 	                e.printStackTrace();
 	            }
 	        }
 	 }
-	 
 	 public org.apache.lucene.document.Field getField(String columnName,String type,Object value){
 		 if(type.equals("string")){
 			 return new TextField(columnName,value.toString(),org.apache.lucene.document.Field.Store.YES);
 		 }
 		 if(type.equals("long")){
+			 return new LongField(columnName, (Long) value,org.apache.lucene.document.Field.Store.YES);
+		 }
+		 if(type.equals("date")){
 			 return new LongField(columnName, (Long) value,org.apache.lucene.document.Field.Store.YES);
 		 }
 		 if(type.equals("double")){
@@ -152,11 +162,11 @@ public class InsertHandle {
 	
 	 public static void main(String[] args) {
 		 InsertHandle insertHandle= new InsertHandle();
-		 //insertHandle.insert("testDatabase", "insert into testTable values(1002,'mytitle3','注：注：kclbm、kcid、nrid三个参数只需传其中一个，若传递多个参数优先级是：nrid > kcid > kclbmkclbm、kcid、nrid三个参数只需传其中一个，若传递多个参数优先级是：nrid > kcid > kclbm')");
+		 insertHandle.insert("testDatabase", "insert into testTable(id,title) values(1009,'mytitle5')");
 		 Wz wz = new Wz();
 		 wz.setId(1007);
 		 wz.setTitle("1007");
 		 wz.setContent("IndexWriter可以根据多种情况进行删除deleteAll（）删除所有的document、deleteDocuments（Query… queries）删除多个查询出来的document，deleteDocuments（Query query）删除query查询出来的document等等，但用Indexwriter执行删除的话一定要进行关闭，否则删除不会立马生效");
-		 insertHandle.insert("testDatabase", "testTable",wz);
+		 //insertHandle.insert("testDatabase", "testTable",wz);
 	}
 }

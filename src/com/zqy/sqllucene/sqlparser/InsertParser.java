@@ -24,8 +24,10 @@ import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.insert.Insert;
 import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.select.SubSelect;
+import test.Wz;
 
 import com.zqy.sqllucene.cfg.DataBaseDefaultConfig;
+import com.zqy.sqllucene.lucenehandle.InsertHandle;
 import com.zqy.sqllucene.pojo.Column;
 import com.zqy.sqllucene.pojo.Field;
 
@@ -45,6 +47,29 @@ public class InsertParser extends BaseParser {
 			Insert insert =  (Insert) CCJSqlParserUtil.parse(sql);
 			init();
 			insert.accept(this);
+			List<Column> columnList = 
+        			DataBaseDefaultConfig.getInstance().getColumns(dataBaseName, tableName);
+			if(fields.size()==columnList.size() && fields.get(0).getColumnName()!=null){
+				for(int i=0;i<fields.size();i++){
+					Column column = columnList.get(i);
+        			Field field = fields.get(i);
+					field.setType(column.getType());
+	    		}
+			}else{
+				for(int i=0;i<fields.size();i++){
+	        		for(int j=0;j<columnList.size();j++){
+	        			Column column = columnList.get(j);
+	        			Field field = fields.get(i);
+	        			if(column.getName().equals(field.getColumnName())){
+	        				field.setColumnName(column.getName());
+	        				field.setType(column.getType());
+	        				columnList.remove(j);
+	        				break;
+	        			}
+	        		}
+	    		}
+			}
+			
 		} catch (JSQLParserException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -57,6 +82,28 @@ public class InsertParser extends BaseParser {
 			init();
 			this.dataBaseName = dataBaseName;
 			insert.accept(this);
+			List<Column> columnList = 
+        			DataBaseDefaultConfig.getInstance().getColumns(dataBaseName, tableName);
+			if(fields.size()==columnList.size() && fields.get(0).getColumnName()!=null){
+				for(int i=0;i<fields.size();i++){
+					Column column = columnList.get(i);
+        			Field field = fields.get(i);
+					field.setType(column.getType());
+	    		}
+			}else{
+				for(int i=0;i<fields.size();i++){
+	        		for(int j=0;j<columnList.size();j++){
+	        			Column column = columnList.get(j);
+	        			Field field = fields.get(i);
+	        			if(column.getName().equals(field.getColumnName())){
+	        				field.setColumnName(column.getName());
+	        				field.setType(column.getType());
+	        				columnList.remove(j);
+	        				break;
+	        			}
+	        		}
+	    		}
+			}
 		} catch (JSQLParserException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -71,8 +118,6 @@ public class InsertParser extends BaseParser {
 		// TODO Auto-generated method stub
 		
 	}
-
-
 	@Override
 	public void visit(Insert insert) {
 		if( dataBaseName==null || "".equals(dataBaseName)){
@@ -135,50 +180,53 @@ public class InsertParser extends BaseParser {
 
 	public void visit(DoubleValue doubleValue) {
 		fields.get(valueIndex).setValue(doubleValue.getValue());
-		fields.get(valueIndex).setType("double");
+		//fields.get(valueIndex).setType("double");
 		valueIndex++;
 	}
 	
 	public void visit(LongValue longValue) {
 		fields.get(valueIndex).setValue(longValue.getValue());
-		fields.get(valueIndex).setType("long");
+		//fields.get(valueIndex).setType("long");
 		valueIndex++;
 	}
 	
 	public void visit(HexValue hexValue) {
 		fields.get(valueIndex).setValue(hexValue.getValue());
-		fields.get(valueIndex).setType("hex");
+		//fields.get(valueIndex).setType("hex");
 		valueIndex++;
 	}
 
 	public void visit(DateValue dateValue) {
 		fields.get(valueIndex).setValue(dateValue.getValue());
-		fields.get(valueIndex).setType("date");
+		//fields.get(valueIndex).setType("date");
 		valueIndex++;
 	}
 
 	public void visit(TimeValue timeValue) {
 		fields.get(valueIndex).setValue(timeValue.getValue());
-		fields.get(valueIndex).setType("timeValue");
+		//fields.get(valueIndex).setType("timeValue");
 		valueIndex++;
 	}
 
 	public void visit(TimestampValue timestampValue) {
 		fields.get(valueIndex).setValue(timestampValue.getValue());
-		fields.get(valueIndex).setType("timeValue");
+		//fields.get(valueIndex).setType("timeValue");
 		valueIndex++;
 	}
-
 	public void visit(Parenthesis parenthesis) {
 	}
-
 	public void visit(StringValue stringValue) {
 		fields.get(valueIndex).setValue(stringValue.getValue());
-		fields.get(valueIndex).setType("string");
+		//fields.get(valueIndex).setType("string");
 		valueIndex++;
 	}
 	public static void main(String[] args) {
-		InsertParser insertParser = new InsertParser();
-		insertParser.insertParser("insert into test.table1(abc,ddd,ccc,aa) values(1,2,3,'abcd')");
+		 InsertHandle insertHandle= new InsertHandle();
+		 insertHandle.insert("testDatabase", "insert into testTable values(1002,'mytitle3','注：注：kclbm、kcid、nrid三个参数只需传其中一个，若传递多个参数优先级是：nrid > kcid > kclbmkclbm、kcid、nrid三个参数只需传其中一个，若传递多个参数优先级是：nrid > kcid > kclbm')");
+		 Wz wz = new Wz();
+		 wz.setId(1007);
+		 wz.setTitle("1007");
+		 wz.setContent("IndexWriter可以根据多种情况进行删除deleteAll（）删除所有的document、deleteDocuments（Query… queries）删除多个查询出来的document，deleteDocuments（Query query）删除query查询出来的document等等，但用Indexwriter执行删除的话一定要进行关闭，否则删除不会立马生效");
+		 //insertHandle.insert("testDatabase", "testTable",wz);
 	}
 }

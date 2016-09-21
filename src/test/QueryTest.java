@@ -146,7 +146,7 @@ public class QueryTest {
      */
 
     
-    public void rangeQuery() {
+/*    public void rangeQuery() {
         try {
             TermRangeQuery rangeQuery = new TermRangeQuery("bookPrice", "50.00",
                     "100.00", true, true);
@@ -162,7 +162,7 @@ public class QueryTest {
             e.printStackTrace();
         }
 
-    }
+    }*/
     
     /*
      * parser相当于rangeQuery
@@ -194,7 +194,7 @@ public class QueryTest {
     }
 
     
-    public void ikParser() {
+    /*public void ikParser() {
         try {
             String queryString = "钢铁侠  bookDisAccount:56折";
             Query query = IKQueryParser.parse("bookName", queryString);
@@ -211,7 +211,7 @@ public class QueryTest {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
+    }*/
 
     /*
      * 前缀查询
