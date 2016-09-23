@@ -162,7 +162,7 @@ public class InsertHandle {
 	
 	 public static void main(String[] args) {
 		 InsertHandle insertHandle= new InsertHandle();
-		 insertHandle.insert("testDatabase", "insert into testTable(id,title) values(1009,'mytitle5')");
+		 insertHandle.insert("testDatabase", "insert into testTable(id,title,content) values(1010,'mytitle5','查询正则')");
 		 Wz wz = new Wz();
 		 wz.setId(1007);
 		 wz.setTitle("1007");

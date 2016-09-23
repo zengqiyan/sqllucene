@@ -2,11 +2,15 @@ package com.zqy.sqllucene.lucenehandle;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.MultiReader;
@@ -15,10 +19,10 @@ import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.queryparser.classic.QueryParser.Operator;
-import org.apache.lucene.queryparser.flexible.standard.nodes.NumericRangeQueryNode;
-import org.apache.lucene.queryparser.xml.builders.NumericRangeQueryBuilder;
 import org.apache.lucene.sandbox.queries.regex.RegexQuery;
 import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanClause.Occur;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.FuzzyQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MultiPhraseQuery;
@@ -31,12 +35,13 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.WildcardQuery;
+import org.apache.lucene.search.highlight.Fragmenter;
 import org.apache.lucene.search.highlight.Highlighter;
+import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.apache.lucene.search.highlight.QueryScorer;
-import org.apache.lucene.search.spans.SpanFirstQuery;
-import org.apache.lucene.search.spans.SpanNearQuery;
-import org.apache.lucene.search.spans.SpanQuery;
-import org.apache.lucene.search.spans.SpanTermQuery;
+import org.apache.lucene.search.highlight.SimpleHTMLFormatter;
+import org.apache.lucene.search.highlight.SimpleSpanFragmenter;
+import org.apache.lucene.search.spans.*;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.NumericUtils;
@@ -48,16 +53,21 @@ import com.zqy.sqllucene.cfg.DataBaseDefaultConfig;
 public class SelectHandle {
 	 private String dataBaseName;
 	 private String[] tableNames;
-	 private String[] queryColumn;
+	 private String[] queryColumns;
 	 private int sizes;
-	 public void queryConfig(String dataBaseName,String[] tableNames,int sizes){
+	 private Object result;
+	 public void config(String dataBaseName,String[] tableNames,int sizes){
 		 this.dataBaseName = dataBaseName;
 		 this.tableNames = tableNames;
 		 this.sizes = sizes;
 	 }
-	 public void setQueryColumn(String[] queryColumn){
-		 this.queryColumn = queryColumn;
-	 }
+	
+	public String[] getQueryColumns() {
+		return queryColumns;
+	}
+	public void setQueryColumns(String[] queryColumns) {
+		this.queryColumns = queryColumns;
+	}
 	 private DataBaseDefaultConfig dataBaseDefaultConfig = DataBaseDefaultConfig.getInstance();
 	 public IndexSearcher getSearcher() {
          IndexReader indexReader = null;
@@ -81,30 +91,28 @@ public class SelectHandle {
        * 日期的查询需要转成数字进行查询，
        * 数字查询使用NumbericRangeQuery
 	     */	 
-    public Term termQuery(String columnName,Object keyWord) {
+    public TermQuery termQuery(String columnName,Object keyWord) {
         Term term = getTerm(columnName,keyWord);
 		TermQuery termQuery = new TermQuery(term);
-		resultHandle(termQuery);
-		return term;
+		return termQuery;
     }
     /*
      * 前缀查询
      */
     
-    public Term prefixQuery(String columnName,String prefix) {
+    public PrefixQuery prefixQuery(String columnName,String prefix) {
     	Term prefixTerm = null;
         prefixTerm = new Term(columnName,prefix);
 		PrefixQuery query = new PrefixQuery(prefixTerm);
-		resultHandle(query);
-		return prefixTerm;
+		return query;
     }
     /*
      * 数字查询
      * 字符串有效
      */
-    public void termRangeQuery(String columnName,String start,String end) {
-		Query query = new TermRangeQuery(columnName,new BytesRef(start.getBytes()),new BytesRef(end.getBytes()) , true, true);
-		resultHandle(query);
+    public TermRangeQuery termRangeQuery(String columnName,String start,String end) {
+    	TermRangeQuery termRangeQuery = new TermRangeQuery(columnName,new BytesRef(start.getBytes()),new BytesRef(end.getBytes()) , true, true);
+		return termRangeQuery;
     }
    
     /*
@@ -115,54 +123,53 @@ public class SelectHandle {
      * FloatField,
      * DoubleField等这些表示数字的Field域有效
      */
-    public void numericRangeQuery(String columnName,Float start,Float end) {
-        Query query = NumericRangeQuery.newFloatRange(columnName, start,end, true, true);   		
-		resultHandle(query);
+    public NumericRangeQuery<Float> numericRangeQuery(String columnName,Float start,Float end) {
+    	NumericRangeQuery<Float> numericRangeQuery = NumericRangeQuery.newFloatRange(columnName, start,end, true, true);   		
+		return numericRangeQuery;
     }
-    public void numericRangeQuery(String columnName,Long start,Long end) {
-        Query query = NumericRangeQuery.newLongRange(columnName, start,end, true, true);   		
-		resultHandle(query);
+    public NumericRangeQuery<Long> numericRangeQuery(String columnName,Long start,Long end) {
+    	NumericRangeQuery<Long> numericRangeQuery = NumericRangeQuery.newLongRange(columnName, start,end, true, true);   		
+		return numericRangeQuery;
     }
-    public void numericRangeQuery(String columnName,Integer start,Integer end) {
-        Query query = NumericRangeQuery.newIntRange(columnName, start,end, true, true);   		
-		resultHandle(query);
+    public NumericRangeQuery<Integer> numericRangeQuery(String columnName,Integer start,Integer end) {
+    	NumericRangeQuery<Integer> numericRangeQuery = NumericRangeQuery.newIntRange(columnName, start,end, true, true);   		
+		return numericRangeQuery;
     }
-    public void numericRangeQuery(String columnName,Double start,Double end) {
-        Query query = NumericRangeQuery.newDoubleRange(columnName, start,end, true, true);   		
-		resultHandle(query);
+    public NumericRangeQuery<Double> numericRangeQuery(String columnName,Double start,Double end) {
+    	NumericRangeQuery<Double> numericRangeQuery = NumericRangeQuery.newDoubleRange(columnName, start,end, true, true);   		
+		return numericRangeQuery;
     }
    
     /*
      * 通配符查询
      */
-    public Term wildcardQuery(String columnName,String keyWord){
+    public WildcardQuery wildcardQuery(String columnName,String keyWord){
     	Term term =null;
         //String queryString = "?品*";
 		term = new Term(columnName, keyWord);
 		WildcardQuery wildcardQuery = new WildcardQuery(term);
-		resultHandle(wildcardQuery);
-		return term;
+		return wildcardQuery;
     }
  /*   SpanTermQuery，他和TermQuery用法很相似，
   *   唯一区别就是SapnTermQuery可以得到Term的span跨度信息*/
-    public void spanTermQuery(String columnName,String keyWord,int end){
+    public SpanTermQuery spanTermQuery(String columnName,String keyWord,int end){
         //String queryString = "大王";
     	Term term = new Term(columnName, keyWord);
 		SpanTermQuery spanTermQuery = new SpanTermQuery(term);
-		resultHandle(spanTermQuery);
+		return spanTermQuery;
     }
     /*
      * 固定位置的词条查询,在指定距离可以找到第一个单词的查询。
      * eg:查询分词的第2个位置为大王的记录
      */
     
-    public void spanFirstQuery(String columnName,String keyWord,int end){
+    public SpanFirstQuery spanFirstQuery(String columnName,String keyWord,int end){
     	Term term =null;
         //String queryString = "大王";
 		term = new Term(columnName, keyWord);
 		SpanTermQuery spanTermQuery = new SpanTermQuery(term);
 		SpanFirstQuery spanFirstQuery = new SpanFirstQuery(spanTermQuery,end);
-		resultHandle(spanFirstQuery);
+		return spanFirstQuery;
     }
   /*  SpanNearQuery：用来匹配两个Term之间的跨度的，即一个Term经过几个跨度可以到达另一个Term,
    * slop为跨度因子，用来限制两个Term之间的最大跨度，不可能一个Term和另一个Term之间要经过十万八千个跨度
@@ -175,38 +182,78 @@ public class SelectHandle {
               如果slop=2就无法得到结果。这里我们可以认为slope是单词移动得次数，可以左移或者右移。这里特别提 醒,
     PhraseQuery不保证前后单词的次序,在上面的例子中,”two one”就需要2个slop,也就是认为one 向左边移动2位, 就是能够匹配的”one two”如果是“five three one” 就需要slope=6才能匹配。
     */
-    public void spanNearQuery(String columnName,String keyWordStart,String keyWordEnd,int slop){
+    public SpanNearQuery spanNearQuery(String columnName,String keyWordStart,String keyWordEnd,int slop){
     	 SpanQuery queryStart = new SpanTermQuery(new Term(columnName,keyWordStart));
          SpanQuery queryEnd = new SpanTermQuery(new Term(columnName,keyWordEnd));
+         SpanNearQuery spanNearQuery = new SpanNearQuery(
+             new SpanQuery[] {queryStart,queryEnd}, slop, false, false);
+		return spanNearQuery;
+    }
+    //SpanNotQuery:使用场景是当使用SpanNearQuery时，如果两个Term从TermA到TermB有多种情况，
+    //即可能出现TermA或者TermB在索引中重复出现，则可能有多种情况，SpanNotQuery就是用来限制TermA和
+    //TermB之间不存在TermC,从而排除一些情况，实现更精确的控制
+    //slop:keyWordStart与keyWordEnd跨度
+    //pre:keyWordExclude之前有多少字符
+    //post:keyWordExclude之后有多少字符
+    public SpanNotQuery spanNotQuery(String columnName,String keyWordStart,String keyWordEnd,String keyWordExclude,int slop,int pre, int post){
+         SpanQuery queryStart = new SpanTermQuery(new Term("columnName",keyWordStart));
+         SpanQuery queryEnd = new SpanTermQuery(new Term("columnName",keyWordEnd));
+         SpanQuery excludeQuery = new SpanTermQuery(new Term("columnName",keyWordExclude));
          SpanQuery spanNearQuery = new SpanNearQuery(
              new SpanQuery[] {queryStart,queryEnd}, slop, false, false);
-     	resultHandle(spanNearQuery);
-    }
-   /* SpanNearQuery：查询的几个语句之间保持者一定的距离。
+         SpanNotQuery spanNotQuery = new SpanNotQuery(spanNearQuery, excludeQuery, pre,post);
+		return spanNotQuery;
+   }
+   public SpanNotQuery spanNotQuery(String columnName,String keyWordStart,String keyWordEnd,String keyWordExclude,int slop){
+        SpanQuery queryStart = new SpanTermQuery(new Term(columnName,keyWordStart));
+        SpanQuery queryEnd = new SpanTermQuery(new Term(columnName,keyWordEnd));
+        SpanQuery excludeQuery = new SpanTermQuery(new Term(columnName,keyWordExclude));
+        SpanQuery spanNearQuery = new SpanNearQuery(
+            new SpanQuery[] {queryStart,queryEnd}, slop, false, false);
+         SpanNotQuery spanNotQuery = new SpanNotQuery(spanNearQuery, excludeQuery);
+		return spanNotQuery;
+  }
+   /* 
     SpanOrQuery：同时查询几个词句查询。
-    SpanNotQuery：从一个词距查询结果中，去除一个词距查询。*/
-  
+   */
+   public SpanOrQuery spanOrQuery(SpanQuery... spanQuerys){
+	 SpanOrQuery spanOrQuery = new SpanOrQuery(spanQuerys);
+	return spanOrQuery;
+ }
+   
     /*
      * RegexQuery
      * 正则查询，查询的字符串为一个正则表达式
      */
-    public void regexQuery(String columnName,String regexText){
+    public RegexQuery regexQuery(String columnName,String regexText){
         //String queryString = "^钢铁";
         Term t = new Term(columnName,regexText);
         RegexQuery regexQuery = new RegexQuery(t);
-        try {
-            TopDocs topDocs = getSearcher().search(regexQuery, sizes);
-            System.out.println("找到数据："+topDocs.totalHits);
-            for(ScoreDoc scoreDoc : topDocs.scoreDocs){
-                int docId = scoreDoc.doc;
-                Document document = getSearcher().doc(docId);
-                System.out.println(document);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        
+        return regexQuery;
     }
+    /*
+     * 模糊查询（相似度查询）
+     * 默认的相似度为0.5
+     * 在实例化FuzzyQuery时可以改变相似度
+     */
+    public FuzzyQuery fuzzyQuery(String columnName,Object keyWord,int maxEdits){
+            Term term =getTerm(columnName,keyWord);
+            FuzzyQuery fuzzyQuery = new FuzzyQuery(term,maxEdits);
+            return fuzzyQuery; 
+    }
+    
+    //多个query查询
+    public BooleanQuery booleanQuery(Query[] querys,Occur[] occurs){
+        BooleanQuery booleanQuery= new BooleanQuery();
+        if(querys.length!=occurs.length){
+        	throw new RuntimeException("query布尔条件与query个数不符合！");
+        }
+        for(int i=0;i<querys.length;i++){
+        	  booleanQuery.add(querys[i], occurs[i]);
+        }
+		return booleanQuery;
+    }
+    
     /*
      * 使用parser可以替代query
      * 如下相当于 钢铁  / 侠 使用 BooleanQuery的Must
@@ -264,99 +311,57 @@ public class SelectHandle {
      * 默认为0
      */
     
-    public void phraseQuery(String columnName,int slop,Object...keyWords) {
-        try {
-        	PhraseQuery phraseQuery = new PhraseQuery();
-        	for(int i=0;i<keyWords.length;i++){
-        		 Term term = getTerm(columnName, keyWords[i]);
-        		 phraseQuery.add(term);
-        	}
-            //Term term1 = new Term("bookName", "雅");
-            //Term term2 = new Term("bookName", "钢铁");
-            //phraseQuery.add(term1);
-            //phraseQuery.add(term2);
-            phraseQuery.setSlop(slop);
-            System.out.println(phraseQuery.toString());
-            TopDocs topDocs = getSearcher().search(phraseQuery, sizes);
-            System.out.println("找到记录数:" + topDocs.totalHits);
-            for (ScoreDoc score : topDocs.scoreDocs) {
-                int docId = score.doc;
-                Document document = getSearcher().doc(docId);
-                System.out.println(document);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public PhraseQuery phraseQuery(String columnName,int slop,Object...keyWords) {
+        PhraseQuery phraseQuery = new PhraseQuery();
+		for(int i=0;i<keyWords.length;i++){
+			 Term term = getTerm(columnName, keyWords[i]);
+			 phraseQuery.add(term);
+		}
+		//Term term1 = new Term("bookName", "雅");
+		//Term term2 = new Term("bookName", "钢铁");
+		//phraseQuery.add(term1);
+		//phraseQuery.add(term2);
+		phraseQuery.setSlop(slop);
+		return phraseQuery;
     }
     /*
      * 多短语查询
      * 查询结果为钢铁侠 或 钢铁情缘
      */
     
+    public MultiPhraseQuery multiPhraseQuery(String columnName,List<Object> keyWordList){
+    	 MultiPhraseQuery multiPhraseQuery = null;
+    	/*String queryStr1 = "钢铁";
+		String queryStr2 = "侠";
+		String queryStr3 = "情缘";
+		Term term1 = new Term("bookName", queryStr1);
+		Term term2 = new Term("bookName",queryStr2);
+		Term term3 = new Term("bookName",queryStr3);*/
+		multiPhraseQuery = new MultiPhraseQuery();
+		for(Object o :keyWordList){
+			Term termString;
+			if(o instanceof String){
+				 termString = new Term(columnName, o.toString());
+				 multiPhraseQuery.add(termString);
+			}else if(o instanceof List){
+				List<Object> list = (List<Object>) o;
+				Term[] terms = new Term[list.size()];
+				for(int i=0;i<list.size();i++){
+					terms[i] = getTerm(columnName, list.get(i));
+				}
+				multiPhraseQuery.add(terms);
+			}else if(o instanceof Object[]){
+				Object[] keyWords =  (Object[]) o;
+				Term[] terms = new Term[keyWords.length];
+				for(int i=0;i<keyWords.length;i++){
+					terms[i] = getTerm(columnName, keyWords[i]);
+				}
+				multiPhraseQuery.add(terms);
+			}
+		}
+		multiPhraseQuery.setSlop(10);
+		return multiPhraseQuery;
     
-    public void multiPhraseQuery(String columnName,List<Object> keyWordList){
-        try {
-            /*String queryStr1 = "钢铁";
-            String queryStr2 = "侠";
-            String queryStr3 = "情缘";
-            Term term1 = new Term("bookName", queryStr1);
-            Term term2 = new Term("bookName",queryStr2);
-            Term term3 = new Term("bookName",queryStr3);*/
-            MultiPhraseQuery multiPhraseQuery = new MultiPhraseQuery();
-            for(Object o :keyWordList){
-            	Term termString;
-            	if(o instanceof String){
-            		 termString = new Term(columnName, o.toString());
-            		 multiPhraseQuery.add(termString);
-            	}else if(o instanceof List){
-            		List<Object> list = (List<Object>) o;
-            		Term[] terms = new Term[list.size()];
-            		for(int i=0;i<list.size();i++){
-            			terms[i] = getTerm(columnName, list.get(i));
-            		}
-            		multiPhraseQuery.add(terms);
-            	}else if(o instanceof Object[]){
-            		Object[] keyWords =  (Object[]) o;
-            		Term[] terms = new Term[keyWords.length];
-            		for(int i=0;i<keyWords.length;i++){
-            			terms[i] = getTerm(columnName, keyWords[i]);
-            		}
-            		multiPhraseQuery.add(terms);
-            	}
-            }
-            multiPhraseQuery.setSlop(10);
-            TopDocs topDocs = getSearcher().search(multiPhraseQuery,sizes);
-            System.out.println("找到记录数:"+topDocs.totalHits);
-            for(ScoreDoc scoreDoc : topDocs.scoreDocs){
-                int docId = scoreDoc.doc;
-                Document document = getSearcher().doc(docId);
-                System.out.println(docId+":"+document);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    
-    }
-    /*
-     * 模糊查询（相似度查询）
-     * 默认的相似度为0.5
-     * 在实例化FuzzyQuery时可以改变相似度
-     */
-    
-    public void fuzzyQuery(String columnName,Object keyWord,int maxEdits){
-        try {
-            Term term =getTerm(columnName,keyWord);
-            FuzzyQuery fuzzyQuery = new FuzzyQuery(term,maxEdits);
-            TopDocs topDocs = getSearcher().search(fuzzyQuery, sizes);
-            System.out.println("找到记录数:"+topDocs.totalHits);
-            for(ScoreDoc scoreDoc :topDocs.scoreDocs){
-                int docId = scoreDoc.doc;
-                Document document = getSearcher().doc(docId);
-                System.out.println(document);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } 
     }
     
     
@@ -372,7 +377,6 @@ public class SelectHandle {
             QueryParser parser = new QueryParser(Version.LUCENE_46, columnName,dataBaseDefaultConfig.getAnalyzer());
             parser.setDefaultOperator(Operator.AND);
             Query query = parser.parse(parseText);
-            resultHandle(query);
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -388,7 +392,6 @@ public class SelectHandle {
             QueryParser parser = new QueryParser(Version.LUCENE_46,columnName,dataBaseDefaultConfig.getAnalyzer());
             parser.setDefaultOperator(Operator.AND);
             Query query = parser.parse(text);
-            resultHandle(query);
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -400,16 +403,15 @@ public class SelectHandle {
      */
     
     
-    public void multiFieldQueryParser(String [] queries,String [] fields,BooleanClause.Occur [] booleanClauseOccur){
-        try {
+    public Query multiFieldQueryParser(String [] queries,String [] fields,BooleanClause.Occur [] booleanClauseOccur){
+    	Query query =null;
+    	try {
             //String bookNameString = "钢铁是怎样炼成 的";
             //String bookPriceString = "[70 TO 80]";
             //String [] queries = new String []{bookNameString,bookPriceString};
             //String [] fields = {"bookName","bookPrice"};
             //BooleanClause.Occur [] booleanClauseOccur = {BooleanClause.Occur.MUST,BooleanClause.Occur.MUST};
-            Analyzer ikAnalyzer = new IKAnalyzer();
-            Query query = MultiFieldQueryParser.parse(Version.LUCENE_46, queries, fields,booleanClauseOccur,ikAnalyzer);
-            resultHandle(query);
+            query = MultiFieldQueryParser.parse(Version.LUCENE_46, queries, fields,booleanClauseOccur,dataBaseDefaultConfig.getAnalyzer());
             /*TopDocs topDocs = getSearcher().search(query,sizes);
             System.out.println("找到记录数:"+topDocs.totalHits);
             Highlighter highLighter = new Highlighter(new QueryScorer(query));
@@ -424,9 +426,9 @@ public class SelectHandle {
         } catch (ParseException e) {
             e.printStackTrace();
         }
+		return query;
     }
-    public void multiFieldQueryParser(String text,String... columnNames){
-        try {
+    public Query multiFieldQueryParser(String text,String... columnNames){
             //String bookNameString = "钢铁是怎样炼成 的";
             //String bookPriceString = "[70 TO 80]";
             //String [] queries = new String []{bookNameString,bookPriceString};
@@ -434,28 +436,14 @@ public class SelectHandle {
             //BooleanClause.Occur [] booleanClauseOccur = {BooleanClause.Occur.MUST,BooleanClause.Occur.MUST};
             QueryParser queryParser = new MultiFieldQueryParser(Version.LUCENE_46,columnNames ,dataBaseDefaultConfig.getAnalyzer()); 
             System.out.println("query:"+queryParser);
-            Query  query = queryParser.parse(text);
-            resultHandle(query);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-    }
-    private void resultHandle(Query query){
-    	 System.out.println(query);
-         TopDocs topdocs;
-		try {
-		 topdocs = getSearcher().search(query, sizes);
-         System.out.println("共找到" + topdocs.scoreDocs.length + ":条记录");
-         Highlighter highLighter = new Highlighter(new QueryScorer(query));
-         for (ScoreDoc scoreDocs : topdocs.scoreDocs) {
-             int documentId = scoreDocs.doc;
-             Document document = getSearcher().doc(documentId);
-             System.out.println(document);
-         }
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+            Query query = null;
+			try {
+				query = queryParser.parse(text);
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		return query;
     }
     private Term getTerm(String columnName,Object keyWord ){
 		 Term term = null;
@@ -468,16 +456,68 @@ public class SelectHandle {
 			term = new Term(columnName, keyWord.toString());
 		 }
 		    return term;
+   }
+    //private void resultHandle(Query query){}
+    public List getResult(Query query){
+      	 System.out.println(query);
+           TopDocs topdocs;
+           SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter("【","】"); //如果不指定参数的话，默认是加粗，即<b><b/>
+           QueryScorer scorer = new QueryScorer(query);//计算得分，会初始化一个查询结果最高的得分
+           Fragmenter fragmenter = new SimpleSpanFragmenter(scorer); //根据这个得分计算出一个片段
+           Highlighter highlighter = new Highlighter(simpleHTMLFormatter, scorer);
+           highlighter.setTextFragmenter(fragmenter); //设置一下要显示的片段
+           ArrayList<Map<String,String>> list = new ArrayList<Map<String,String>>();
+   		try {
+   		   topdocs = getSearcher().search(query, sizes);
+           System.out.println("共找到" + topdocs.scoreDocs.length + ":条记录");
+           for (ScoreDoc scoreDocs : topdocs.scoreDocs) {
+               int documentId = scoreDocs.doc;
+               Document document = getSearcher().doc(documentId);
+               if(queryColumns!=null && queryColumns.length>0){
+              	 for(int i=0;i<queryColumns.length;i++){
+              		  String column = document.get(queryColumns[i]);
+              		  if(column != null) {
+                            TokenStream tokenStream = dataBaseDefaultConfig.getAnalyzer().tokenStream(queryColumns[i],new StringReader(column));
+                            String summary = highlighter.getBestFragment(tokenStream, column);
+                            if(summary!=null){
+                          	  column = summary;
+                            }
+                            HashMap<String,String> map = new HashMap<>();
+                            map.put(queryColumns[i], column);
+                            list.add(map);
+                        }
+              	 }
+               }else{
+               }
+           }
+   		} catch (IOException e) {
+   			e.printStackTrace();
+   		} catch (InvalidTokenOffsetsException e) {
+   			e.printStackTrace();
+   		}
+   		return list;
+       }
+    private String showHighlight(String field){
+		return field;
+    	 
     }
+   
+   
+    
     public static void main(String[] args) {
     	SelectHandle selectHandle = new SelectHandle();
-    	selectHandle.queryConfig("testDatabase", new String[]{"testTable"}, 10);
-    	selectHandle.setQueryColumn(new String[]{"id"});
-    	//selectHandle.termQuery("id", 1005L);
+    	selectHandle.config("testDatabase", new String[]{"testTable"}, 10);
+    	selectHandle.setQueryColumns(new String[]{"id","title"});
+    	//selectHandle.termQuery("id", 1007L);
     	//selectHandle.fuzzyQuery("id", 1007l,2);
         //selectHandle.rangeQueryParser("title", 10,1200);
         //selectHandle.termRangeQuery("id", "10", "1200");
-    	selectHandle.prefixQuery("title","1");
+    	//selectHandle.prefixQuery("title","1");
     	//selectHandle.spanFirstQuery("title", "y", 2);
+    	//selectHandle.regexQuery("title", "^1007");
+    	ArrayList alist = new ArrayList<>();
+    	alist.forEach(list->System.out.println("aa"+list));
+    	//selectHandle.setResult(alist);
+    	alist.forEach(list->System.out.println("111:"+list));
 	}
 }

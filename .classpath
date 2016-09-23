@@ -2,10 +2,31 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/lucence4.6"/>
 	<classpathentry kind="lib" path="lib/commons-beanutils-1.8.3.jar"/>
 	<classpathentry kind="lib" path="lib/commons-io-2.2.jar"/>
 	<classpathentry kind="lib" path="lib/dom4j-1.6.1.jar"/>
+	<classpathentry kind="lib" path="lib/lucence4.6/lucene-analyzers-common-4.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/lucence4.6/lucene-analyzers-icu-4.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/lucence4.6/lucene-analyzers-kuromoji-4.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/lucence4.6/lucene-analyzers-uima-4.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/lucence4.6/lucene-benchmark-4.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/lucence4.6/lucene-classification-4.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/lucence4.6/lucene-codecs-4.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/lucence4.6/lucene-core-4.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/lucence4.6/lucene-expressions-4.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/lucence4.6/lucene-facet-4.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/lucence4.6/lucene-grouping-4.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/lucence4.6/lucene-highlighter-4.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/lucence4.6/lucene-join-4.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/lucence4.6/lucene-memory-4.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/lucence4.6/lucene-misc-4.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/lucence4.6/lucene-queries-4.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/lucence4.6/lucene-queryparser-4.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/lucence4.6/lucene-replicator-4.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/lucence4.6/lucene-sandbox-4.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/lucence4.6/lucene-spatial-4.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/lucence4.6/lucene-suggest-4.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/lucence4.6/lucene-test-framework-4.6.0.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
