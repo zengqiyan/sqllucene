@@ -218,7 +218,8 @@ public class DataBaseDefaultConfig implements DataBaseConfiguration{
 					int index = columnNames[j].indexOf(".");
 					if(index>0){
 				     String tableName = columnNames[j].substring(0, index);
-					 if(tableName.equals(tableNames[i]) && columnElement.attributeValue("name").equals(columnNames[j])){
+				     String columnName = columnNames[j].substring(index+1, columnNames[j].length());
+					 if(tableName.equals(tableNames[i]) && columnElement.attributeValue("name").equals(columnName)){
 						Column column = new Column();
 						column.setName(columnElement.attributeValue("name"));
 						column.setType(columnElement.attributeValue("type"));

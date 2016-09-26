@@ -7,9 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.swing.table.TableStringConverter;
-
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
@@ -56,14 +53,12 @@ import org.wltea.analyzer.lucene.IKAnalyzer;
 
 import com.zqy.sqllucene.cfg.DataBaseDefaultConfig;
 import com.zqy.sqllucene.pojo.Column;
-import com.zqy.sqllucene.pojo.PageBean;
 
 public class SelectHandle {
 	 private String dataBaseName;
 	 private String[] tableNames;
 	 private String tableName;
 	 private String[] queryColumns;
-	
 	 private Sort sort;
 	 public void config(String dataBaseName,String[] tableNames){
 		 this.dataBaseName = dataBaseName;
@@ -89,40 +84,7 @@ public class SelectHandle {
 	public void setQueryColumns(String[] queryColumns) {
 		this.queryColumns = queryColumns;
 	}
-	//true:降序
-	//false:升序
-	public void SetSort(String[] columnNames,Boolean[] bools){
-		  if(columnNames.length!=bools.length){
-	        	throw new RuntimeException("布尔条件与排序字段个数不符合！");
-	        }
-		 SortField[] sortFields = new SortField[columnNames.length];
-		 List<Column> columnList = dataBaseDefaultConfig.getColumns(dataBaseName,tableNames,columnNames);
-	     for(int i=0;i<columnList.size();i++){
-	    	 if(columnList.get(i).getType().equals("string")){
-	    		 sortFields[i] = new SortField(columnList.get(i).getName(), Type.STRING, bools[i]);
-	    	 }
-	    	 switch (columnList.get(i).getType()) {
-	    	 	case "string":
-				 sortFields[i] = new SortField(columnList.get(i).getName(), Type.STRING, bools[i]);
-				 break;
-	    	 	case "double":
-				 sortFields[i] = new SortField(columnList.get(i).getName(), Type.DOUBLE, bools[i]);
-				 break;
-	    	 	case "long":
-				 sortFields[i] = new SortField(columnList.get(i).getName(), Type.LONG, bools[i]);
-				 break;
-	    	 	case "float":
-				 sortFields[i] = new SortField(columnList.get(i).getName(), Type.FLOAT, bools[i]);
-				 break;
-	    	 	case "int":
-				 sortFields[i] = new SortField(columnList.get(i).getName(), Type.INT, bools[i]);
-				 break;
-			 default:
-				break;
-			}
-	     }
-			
-	}
+	
 	 private DataBaseDefaultConfig dataBaseDefaultConfig = DataBaseDefaultConfig.getInstance();
 	 public IndexSearcher getSearcher() {
 		 if(tableNames!=null && tableNames.length>0){
@@ -548,8 +510,45 @@ public class SelectHandle {
       ScoreDoc[] docs = topDocs.scoreDocs;
       return docs.length;
     }
-  
-    //private void resultHandle(Query query){}
+  //true:降序
+  	//false:升序
+  	public void SetSort(String[] columnNames,Boolean[] bools){
+  		  if(columnNames.length!=bools.length){
+  	        	throw new RuntimeException("布尔条件与排序字段个数不符合！");
+  	        }
+  		 SortField[] sortFields = new SortField[columnNames.length];
+  		 List<Column> columnList = null;
+  		 if(tableNames!=null && tableNames.length>0){
+  			 columnList = dataBaseDefaultConfig.getColumns(dataBaseName,tableNames,columnNames);
+  		 }else{
+  			 columnList = dataBaseDefaultConfig.getColumns(dataBaseName,tableName,columnNames);
+  		 }
+  		
+  	     for(int i=0;i<columnList.size();i++){
+  	    	 switch (columnList.get(i).getType()) {
+  	    	 	case "string":
+  				 sortFields[i] = new SortField(columnList.get(i).getName(), Type.STRING, bools[i]);
+  				 break;
+  	    	 	case "double":
+  				 sortFields[i] = new SortField(columnList.get(i).getName(), Type.DOUBLE, bools[i]);
+  				 break;
+  	    	 	case "long":
+  				 sortFields[i] = new SortField(columnList.get(i).getName(), Type.LONG, bools[i]);
+  				 break;
+  	    	 	case "float":
+  				 sortFields[i] = new SortField(columnList.get(i).getName(), Type.FLOAT, bools[i]);
+  				 break;
+  	    	 	case "int":
+  				 sortFields[i] = new SortField(columnList.get(i).getName(), Type.INT, bools[i]);
+  				 break;
+  			 default:
+  				break;
+  			}
+  	     }
+  	     sort= new Sort(sortFields);
+  	}
+ 
+  	
     public List getResult(Query query,Sort sort,int currentPage,int pageSize){
     	   if(currentPage<=0){
     		   throw new RuntimeException("currentPage大于0");
@@ -589,7 +588,13 @@ public class SelectHandle {
               		  map.put(queryColumns[i], value);
               	 }
                }else{
-            	   List<Column> columnList = dataBaseDefaultConfig.getColumns(dataBaseName, tableNames);
+            	  
+            	   List<Column> columnList = null;
+            		 if(tableNames!=null && tableNames.length>0){
+            			 columnList = dataBaseDefaultConfig.getColumns(dataBaseName,tableNames);
+            		 }else{
+            			 columnList = dataBaseDefaultConfig.getColumns(dataBaseName,tableName);
+            		 }
             	   for(Column column:columnList){
                		  String value = document.get(column.getName());
                		  if(value != null) {
@@ -612,11 +617,14 @@ public class SelectHandle {
    		}
    		return list;
        }
+    public List getResult(Query query,int currentPage,int pageSize){
+        return getResult(null,sort,currentPage,pageSize);
+      }
     public List getResult(Sort sort,int currentPage,int pageSize){
         return getResult(null,sort,currentPage,pageSize);
     }
     public List getResult(int currentPage,int pageSize){
-      return getResult(null,null,currentPage,pageSize);
+      return getResult(null,sort,currentPage,pageSize);
     }
     private String showHighlight(String field){
 		return field;
@@ -627,20 +635,20 @@ public class SelectHandle {
     
     public static void main(String[] args) {
     	SelectHandle selectHandle = new SelectHandle();
-    	selectHandle.config("testDatabase", new String[]{"book"});
+    	selectHandle.config("testDatabase", "book");
     	//selectHandle.setQueryColumns(new String[]{"id","title","content"});
     	//selectHandle.termQuery("id", 1007L);
     	//selectHandle.fuzzyQuery("id", 1007l,2);
         //selectHandle.rangeQueryParser("title", 10,1200);
         //selectHandle.termRangeQuery("id", "10", "1200");
-    	PageBean pageBean = new PageBean();
+   /* 	PageBean pageBean = new PageBean();
     	pageBean.setCurrentPage(1);
-    	pageBean.setPageSize(2);
+    	pageBean.setPageSize(2);*/
+    	selectHandle.SetSort(new String[]{"type","price"}, new Boolean[]{false,false});
     	//List list = selectHandle.getResult(selectHandle.termQuery("ename","qtq"),1,3);
     	List list = selectHandle.getResult(1,100);
     	System.out.println("size:"+list.size());
     	//list.stream().filter(l->l==null).forEach(x->{System.out.println(x);System.out.println("-----");});
-    	
     	list.forEach(x->{System.out.println(x);System.out.println("-----");});
     	//selectHandle.spanFirstQuery("title", "y", 2);
     	//selectHandle.regexQuery("title", "^1007");
