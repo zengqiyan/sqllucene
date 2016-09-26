@@ -8,7 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.lucene.analysis.Analyzer;
+import javax.swing.table.TableStringConverter;
+
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
@@ -25,15 +26,20 @@ import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.FuzzyQuery;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.MultiPhraseQuery;
 import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.Sort;
+import org.apache.lucene.search.SortField;
+import org.apache.lucene.search.SortField.Type;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.TopFieldCollector;
 import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.search.highlight.Fragmenter;
 import org.apache.lucene.search.highlight.Highlighter;
@@ -49,27 +55,84 @@ import org.apache.lucene.util.Version;
 import org.wltea.analyzer.lucene.IKAnalyzer;
 
 import com.zqy.sqllucene.cfg.DataBaseDefaultConfig;
+import com.zqy.sqllucene.pojo.Column;
+import com.zqy.sqllucene.pojo.PageBean;
 
 public class SelectHandle {
 	 private String dataBaseName;
 	 private String[] tableNames;
+	 private String tableName;
 	 private String[] queryColumns;
-	 private int sizes;
-	 private Object result;
-	 public void config(String dataBaseName,String[] tableNames,int sizes){
+	
+	 private Sort sort;
+	 public void config(String dataBaseName,String[] tableNames){
 		 this.dataBaseName = dataBaseName;
 		 this.tableNames = tableNames;
-		 this.sizes = sizes;
 	 }
-	
+	 public void config(String dataBaseName,String[] tableNames,String[] queryColumns){
+		 this.dataBaseName = dataBaseName;
+		 this.tableNames = tableNames;
+		 this.queryColumns = queryColumns;
+	 }
+	 public void config(String dataBaseName,String tableName){
+		 this.dataBaseName = dataBaseName;
+		 this.tableName = tableName;
+	 }
+	 public void config(String dataBaseName,String tableName,String[] queryColumns){
+		 this.dataBaseName = dataBaseName;
+		 this.tableName = tableName;
+		 this.queryColumns = queryColumns;
+	 }
 	public String[] getQueryColumns() {
 		return queryColumns;
 	}
 	public void setQueryColumns(String[] queryColumns) {
 		this.queryColumns = queryColumns;
 	}
+	//true:降序
+	//false:升序
+	public void SetSort(String[] columnNames,Boolean[] bools){
+		  if(columnNames.length!=bools.length){
+	        	throw new RuntimeException("布尔条件与排序字段个数不符合！");
+	        }
+		 SortField[] sortFields = new SortField[columnNames.length];
+		 List<Column> columnList = dataBaseDefaultConfig.getColumns(dataBaseName,tableNames,columnNames);
+	     for(int i=0;i<columnList.size();i++){
+	    	 if(columnList.get(i).getType().equals("string")){
+	    		 sortFields[i] = new SortField(columnList.get(i).getName(), Type.STRING, bools[i]);
+	    	 }
+	    	 switch (columnList.get(i).getType()) {
+	    	 	case "string":
+				 sortFields[i] = new SortField(columnList.get(i).getName(), Type.STRING, bools[i]);
+				 break;
+	    	 	case "double":
+				 sortFields[i] = new SortField(columnList.get(i).getName(), Type.DOUBLE, bools[i]);
+				 break;
+	    	 	case "long":
+				 sortFields[i] = new SortField(columnList.get(i).getName(), Type.LONG, bools[i]);
+				 break;
+	    	 	case "float":
+				 sortFields[i] = new SortField(columnList.get(i).getName(), Type.FLOAT, bools[i]);
+				 break;
+	    	 	case "int":
+				 sortFields[i] = new SortField(columnList.get(i).getName(), Type.INT, bools[i]);
+				 break;
+			 default:
+				break;
+			}
+	     }
+			
+	}
 	 private DataBaseDefaultConfig dataBaseDefaultConfig = DataBaseDefaultConfig.getInstance();
 	 public IndexSearcher getSearcher() {
+		 if(tableNames!=null && tableNames.length>0){
+			 return getSearcher(tableNames);
+		 }else if(tableNames==null || tableNames.length==0){
+			 if(tableName!=null)return getSearcher(tableName);
+		 }
+		return null;
+	 }
+	 private IndexSearcher getSearcher(String[] tableNames) {
          IndexReader indexReader = null;
          IndexReader[] indexReaders = new IndexReader[tableNames.length];
 			try {
@@ -84,6 +147,18 @@ public class SelectHandle {
 				e.printStackTrace();
 			}
          return new IndexSearcher(new MultiReader(indexReaders));
+     }
+	 private IndexSearcher getSearcher(String tableName) {
+         IndexReader indexReader = null;
+			try {
+				indexReader = DirectoryReader.
+						open(FSDirectory.open(new File(dataBaseDefaultConfig.
+								getTablePath(dataBaseName, tableName))));
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+         return new IndexSearcher(indexReader);
      }
 	  /*
 	   * term为查询的最小单位，termQuery的查询字符串将作为一个整体，不会被分词
@@ -238,7 +313,7 @@ public class SelectHandle {
      */
     public FuzzyQuery fuzzyQuery(String columnName,Object keyWord,int maxEdits){
             Term term =getTerm(columnName,keyWord);
-            FuzzyQuery fuzzyQuery = new FuzzyQuery(term,maxEdits);
+            FuzzyQuery fuzzyQuery = new FuzzyQuery(term, maxEdits);
             return fuzzyQuery; 
     }
     
@@ -265,7 +340,7 @@ public class SelectHandle {
             parser.setDefaultOperator(Operator.AND);
             Query query = parser.parse(text);
             System.out.println("query:" + query);
-            TopDocs topdocs = getSearcher().search(query, sizes);
+            TopDocs topdocs = getSearcher().search(query, 10);
             System.out.println("共找到" + topdocs.scoreDocs.length + ":条记录");
             for (ScoreDoc scoreDocs : topdocs.scoreDocs) {
                 int documentId = scoreDocs.doc;
@@ -457,10 +532,34 @@ public class SelectHandle {
 		 }
 		    return term;
    }
+
+    /**
+     * @Title: searchTotalRecord
+     * @Description: 获取符合条件的总记录数
+     * @param query
+     * @return
+     * @throws IOException
+     */
+    public static int searchTotalRecord(IndexSearcher searcher,Query query) throws IOException {
+      TopDocs topDocs = searcher.search(query, Integer.MAX_VALUE);
+      if(topDocs == null || topDocs.scoreDocs == null || topDocs.scoreDocs.length == 0) {
+        return 0;
+      }
+      ScoreDoc[] docs = topDocs.scoreDocs;
+      return docs.length;
+    }
+  
     //private void resultHandle(Query query){}
-    public List getResult(Query query){
-      	 System.out.println(query);
-           TopDocs topdocs;
+    public List getResult(Query query,Sort sort,int currentPage,int pageSize){
+    	   if(currentPage<=0){
+    		   throw new RuntimeException("currentPage大于0");
+    	   }else{
+    		   currentPage = currentPage-1;
+    	   }
+    	   if(pageSize<=0){
+    		   throw new RuntimeException("pageSize大于0");
+    	   }
+    	   if(query==null)query=new MatchAllDocsQuery();
            SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter("【","】"); //如果不指定参数的话，默认是加粗，即<b><b/>
            QueryScorer scorer = new QueryScorer(query);//计算得分，会初始化一个查询结果最高的得分
            Fragmenter fragmenter = new SimpleSpanFragmenter(scorer); //根据这个得分计算出一个片段
@@ -468,27 +567,43 @@ public class SelectHandle {
            highlighter.setTextFragmenter(fragmenter); //设置一下要显示的片段
            ArrayList<Map<String,String>> list = new ArrayList<Map<String,String>>();
    		try {
-   		   topdocs = getSearcher().search(query, sizes);
-           System.out.println("共找到" + topdocs.scoreDocs.length + ":条记录");
-           for (ScoreDoc scoreDocs : topdocs.scoreDocs) {
-               int documentId = scoreDocs.doc;
+   		   //int totalRecord = searchTotalRecord(getSearcher(),query);
+   		  //System.out.println("共找到" + totalRecord + ":条记录");
+   		   if(sort==null) sort = Sort.RELEVANCE;
+           TopFieldCollector c = TopFieldCollector.create(sort, currentPage+pageSize, false, false, false, false);
+           getSearcher().search(query, c);
+           for (ScoreDoc scoreDoc : c.topDocs(currentPage, pageSize).scoreDocs) {
+               int documentId = scoreDoc.doc;
                Document document = getSearcher().doc(documentId);
+               HashMap<String,String> map = new HashMap<>();
                if(queryColumns!=null && queryColumns.length>0){
               	 for(int i=0;i<queryColumns.length;i++){
-              		  String column = document.get(queryColumns[i]);
-              		  if(column != null) {
-                            TokenStream tokenStream = dataBaseDefaultConfig.getAnalyzer().tokenStream(queryColumns[i],new StringReader(column));
-                            String summary = highlighter.getBestFragment(tokenStream, column);
+              		  String value = document.get(queryColumns[i]);
+              		  if(value != null) {
+                            TokenStream tokenStream = dataBaseDefaultConfig.getAnalyzer().tokenStream(queryColumns[i],new StringReader(value));
+                            String summary = highlighter.getBestFragment(tokenStream, value);
                             if(summary!=null){
-                          	  column = summary;
+                            	value = summary;
                             }
-                            HashMap<String,String> map = new HashMap<>();
-                            map.put(queryColumns[i], column);
-                            list.add(map);
                         }
+              		  map.put(queryColumns[i], value);
               	 }
                }else{
+            	   List<Column> columnList = dataBaseDefaultConfig.getColumns(dataBaseName, tableNames);
+            	   for(Column column:columnList){
+               		  String value = document.get(column.getName());
+               		  if(value != null) {
+                             TokenStream tokenStream = dataBaseDefaultConfig.getAnalyzer().tokenStream(column.getName(),new StringReader(value));
+                             String summary = highlighter.getBestFragment(tokenStream, value);
+                             if(summary!=null){
+                            	 value = summary;
+                             }
+                         }
+               		  map.put(column.getName(),value);
+            	   }
+            	   
                }
+               list.add(map);
            }
    		} catch (IOException e) {
    			e.printStackTrace();
@@ -497,6 +612,12 @@ public class SelectHandle {
    		}
    		return list;
        }
+    public List getResult(Sort sort,int currentPage,int pageSize){
+        return getResult(null,sort,currentPage,pageSize);
+    }
+    public List getResult(int currentPage,int pageSize){
+      return getResult(null,null,currentPage,pageSize);
+    }
     private String showHighlight(String field){
 		return field;
     	 
@@ -506,18 +627,26 @@ public class SelectHandle {
     
     public static void main(String[] args) {
     	SelectHandle selectHandle = new SelectHandle();
-    	selectHandle.config("testDatabase", new String[]{"testTable"}, 10);
-    	selectHandle.setQueryColumns(new String[]{"id","title"});
+    	selectHandle.config("testDatabase", new String[]{"book"});
+    	//selectHandle.setQueryColumns(new String[]{"id","title","content"});
     	//selectHandle.termQuery("id", 1007L);
     	//selectHandle.fuzzyQuery("id", 1007l,2);
         //selectHandle.rangeQueryParser("title", 10,1200);
         //selectHandle.termRangeQuery("id", "10", "1200");
-    	//selectHandle.prefixQuery("title","1");
+    	PageBean pageBean = new PageBean();
+    	pageBean.setCurrentPage(1);
+    	pageBean.setPageSize(2);
+    	//List list = selectHandle.getResult(selectHandle.termQuery("ename","qtq"),1,3);
+    	List list = selectHandle.getResult(1,100);
+    	System.out.println("size:"+list.size());
+    	//list.stream().filter(l->l==null).forEach(x->{System.out.println(x);System.out.println("-----");});
+    	
+    	list.forEach(x->{System.out.println(x);System.out.println("-----");});
     	//selectHandle.spanFirstQuery("title", "y", 2);
     	//selectHandle.regexQuery("title", "^1007");
-    	ArrayList alist = new ArrayList<>();
-    	alist.forEach(list->System.out.println("aa"+list));
+    	//ArrayList<Object> alist = new ArrayList<>();
+    	//alist.forEach(list->System.out.println("aa"+list));
     	//selectHandle.setResult(alist);
-    	alist.forEach(list->System.out.println("111:"+list));
+    	//alist.forEach(list->System.out.println("111:"+list));
 	}
 }

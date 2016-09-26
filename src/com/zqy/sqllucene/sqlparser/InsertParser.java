@@ -24,8 +24,6 @@ import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.insert.Insert;
 import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.select.SubSelect;
-import test.Wz;
-
 import com.zqy.sqllucene.cfg.DataBaseDefaultConfig;
 import com.zqy.sqllucene.lucenehandle.InsertHandle;
 import com.zqy.sqllucene.pojo.Column;
@@ -223,10 +221,5 @@ public class InsertParser extends BaseParser {
 	public static void main(String[] args) {
 		 InsertHandle insertHandle= new InsertHandle();
 		 insertHandle.insert("testDatabase", "insert into testTable values(1002,'mytitle3','注：注：kclbm、kcid、nrid三个参数只需传其中一个，若传递多个参数优先级是：nrid > kcid > kclbmkclbm、kcid、nrid三个参数只需传其中一个，若传递多个参数优先级是：nrid > kcid > kclbm')");
-		 Wz wz = new Wz();
-		 wz.setId(1007);
-		 wz.setTitle("1007");
-		 wz.setContent("IndexWriter可以根据多种情况进行删除deleteAll（）删除所有的document、deleteDocuments（Query… queries）删除多个查询出来的document，deleteDocuments（Query query）删除query查询出来的document等等，但用Indexwriter执行删除的话一定要进行关闭，否则删除不会立马生效");
-		 //insertHandle.insert("testDatabase", "testTable",wz);
 	}
 }

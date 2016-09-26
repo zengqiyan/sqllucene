@@ -19,7 +19,7 @@ import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.Version;
 import org.wltea.analyzer.lucene.IKAnalyzer;
 
-import test.Wz;
+import test.Book;
 
 import com.zqy.sqllucene.cfg.DataBaseDefaultConfig;
 import com.zqy.sqllucene.pojo.Column;
@@ -162,11 +162,24 @@ public class InsertHandle {
 	
 	 public static void main(String[] args) {
 		 InsertHandle insertHandle= new InsertHandle();
-		 insertHandle.insert("testDatabase", "insert into testTable(id,title,content) values(1010,'mytitle5','查询正则')");
-		 Wz wz = new Wz();
-		 wz.setId(1007);
-		 wz.setTitle("1007");
-		 wz.setContent("IndexWriter可以根据多种情况进行删除deleteAll（）删除所有的document、deleteDocuments（Query… queries）删除多个查询出来的document，deleteDocuments（Query query）删除query查询出来的document等等，但用Indexwriter执行删除的话一定要进行关闭，否则删除不会立马生效");
-		 //insertHandle.insert("testDatabase", "testTable",wz);
+		 //insertHandle.insert("testDatabase", "insert into testTable(id,title,content) values(1010,'mytitle5','查询正则')");
+		 Book book = new Book(2,"西游记","xyj","小说",62.73,System.currentTimeMillis());
+		 Book book1 = new Book(10,"七天七数据库","qtqsjk","技术",96.23,System.currentTimeMillis());
+		 Book book2 = new Book(4,"编程,编程","bcbc","社会",10.37,System.currentTimeMillis());
+		 Book book3 = new Book(5,"看清本质","kqbz","社会",10.37,System.currentTimeMillis());
+		 Book book4 = new Book(6,"数据库实战","sjksz","技术",77.13,System.currentTimeMillis());
+		 Book book5 = new Book(7,"编程宝典","bcbd","技术",100.3,System.currentTimeMillis());
+		 Book book6= new Book(8,"职场关系论","zcgxl","职场",52.23,System.currentTimeMillis());
+		 Book book7= new Book(9,"健康生活","jksh","生活",20.47,System.currentTimeMillis());
+		 List<Book> list = new ArrayList<Book>();
+		 list.add(book);
+		 list.add(book2);
+		 list.add(book3);
+		 list.add(book4);
+		 list.add(book5);
+		 list.add(book6);
+		 list.add(book7);
+		 //list.forEach(l->insertHandle.insert("testDatabase", "book",l));
+		 insertHandle.insert("testDatabase", "book",book1);
 	}
 }

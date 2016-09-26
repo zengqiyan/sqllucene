@@ -1,5 +1,7 @@
 package test;
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.zqy.sqllucene.sqlparser.finder.ColumnNamesFinder;
@@ -27,6 +29,40 @@ public class Test {
 	}
    }
    public static void main(String[] args) throws JSQLParserException {
-	  
+	  List<String> list =  new ArrayList<String>();
+	  String[] strings = new String[100000000];
+	  for(int i=0;i<50000000;i++){
+		  list.add("testest");
+	  }
+	  for(int i=49999999;i<100000000;i++){
+		  list.add("testest1");
+	  }
+	  for(int i=0;i<50000000;i++){
+		  strings[i]="testest";
+	  }
+	  for(int i=49999999;i<100000000;i++){
+		  strings[i]="testest1";
+	  }
+	  String[] stringss = new String[]{"testest","testest1"};
+	  long start = System.currentTimeMillis();
+	  for(int i=0;i<stringss.length;i++){
+			for(int j=0;j<list.size();j++){
+					if(stringss.equals(list.get(i))){
+						list.remove(j);
+					}
+			}
+			
+		}
+	  long middle = System.currentTimeMillis();
+	  for(int i=0;i<stringss.length;i++){
+			for(int j=0;j<strings.length;j++){
+					if(stringss.equals(strings[i])){
+					}
+			}
+			
+		}
+	  long end = System.currentTimeMillis();
+	  System.out.println("list:"+(middle-start));
+	  System.out.println("string[]:"+(end-middle));
    }
 }

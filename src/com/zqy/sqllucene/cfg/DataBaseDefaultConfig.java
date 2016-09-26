@@ -148,7 +148,7 @@ public class DataBaseDefaultConfig implements DataBaseConfiguration{
 	public List<Table> getTables(String dataBaseName){
 		return null;
 	}
-	public List<Column> getColumns(String dataBaseName,String tableName,List<String> columnNames){
+	public List<Column> getColumns(String dataBaseName,String tableName,String[] columnNames){
 		List<Column> columns = null;
     	try {
 		Document document=load();
@@ -165,18 +165,17 @@ public class DataBaseDefaultConfig implements DataBaseConfiguration{
 		List<Element> columnElements = tableElement.elements("column");
 	    columns = new ArrayList<Column>();
 	    boolean flag = false;
-	    if(columnNames!=null && columnNames.size()>0){
+	    if(columnNames!=null && columnNames.length>0){
 	    	flag=true;
 	    }
 		for(Element columnElement:columnElements){
 			if(flag){
-				for(int j=0;j<columnNames.size();j++){
-					if(columnElement.attributeValue("name").equals(columnNames.get(j))){
+				for(int j=0;j<columnNames.length;j++){
+					if(columnElement.attributeValue("name").equals(columnNames[j])){
 						Column column = new Column();
 						column.setName(columnElement.attributeValue("name"));
 						column.setType(columnElement.attributeValue("type"));
 						columns.add(column);
-						columnNames.remove(j);
 						break;
 					}
 				}
@@ -194,8 +193,55 @@ public class DataBaseDefaultConfig implements DataBaseConfiguration{
 		return columns;
 		
 	}
+	public List<Column> getColumns(String dataBaseName,String[] tableNames, String[] columnNames){
+		List<Column> columns = null;
+    	Document document=load();
+		Element lucene_database = document.getRootElement();
+		Element database  = XmlUtil.parse(lucene_database,"database","name", dataBaseName);
+		if(database==null){
+			throw new RuntimeException("数据库不存在！");
+		}
+		columns = new ArrayList<Column>();
+		for(int i=0;i<tableNames.length;i++){
+		Element tableElement  = XmlUtil.parse(database,"table","name",tableNames[i]);
+		if(tableElement==null){
+			throw new RuntimeException("表\""+tableNames[i]+"\"不存在！");
+		}
+		List<Element> columnElements = tableElement.elements("column");
+	    boolean flag = false;
+	    if(columnNames!=null && columnNames.length>0){
+	    	flag=true;
+	    }
+		for(Element columnElement:columnElements){
+			if(flag){
+				for(int j=0;j<columnNames.length;j++){
+					int index = columnNames[j].indexOf(".");
+					if(index>0){
+				     String tableName = columnNames[j].substring(0, index);
+					 if(tableName.equals(tableNames[i]) && columnElement.attributeValue("name").equals(columnNames[j])){
+						Column column = new Column();
+						column.setName(columnElement.attributeValue("name"));
+						column.setType(columnElement.attributeValue("type"));
+						columns.add(column);
+						break;
+					 }
+				   }
+				}
+			}else{
+				Column column = new Column();
+				column.setName(columnElement.attributeValue("name"));
+				column.setType(columnElement.attributeValue("type"));
+				columns.add(column);
+			}
+		}
+		}
+		return columns;
+	}
 	public List<Column> getColumns(String dataBaseName,String tableName){
-		return getColumns( dataBaseName, tableName,null);
+		return getColumns(dataBaseName,tableName,null);
+	}
+	public List<Column> getColumns(String dataBaseName,String[] tableNames){
+		return getColumns(dataBaseName, tableNames,null);
 	}
 	public Analyzer getAnalyzer(){
 		return new IKAnalyzer(true);
@@ -207,7 +253,7 @@ public class DataBaseDefaultConfig implements DataBaseConfiguration{
         return single;  
     }
 	public static void main(String[] args) {
-		List<Element> databases=null;
-		System.out.println(databases!=null && !databases.isEmpty());
+		List<Column> list = getInstance().getColumns("testDatabase", new String[]{"book","testTable"});
+		list.forEach(column->System.out.println(column.getName()));
 	}
 }

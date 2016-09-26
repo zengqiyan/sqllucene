@@ -100,11 +100,11 @@ public class CreateHandle {
    
     public static void main(String[] args) {
     	CreateHandle createHandle= new CreateHandle();
-    	DataBase database = new DataBase();
+    	/*DataBase database = new DataBase();
     	database.setName("testDatabase");
     	database.setPath("d:/test/testDatabase");
-    	createHandle.createDataBase(database);
-    	createHandle.createTable("create table testDatabase.testTable(id long,title string,content string)");
+    	createHandle.createDataBase(database);*/
+    	createHandle.createTable("create table testDatabase.book(id long,bookname string,ename string,type string,price double,date long)");
     	
 	}
 }
