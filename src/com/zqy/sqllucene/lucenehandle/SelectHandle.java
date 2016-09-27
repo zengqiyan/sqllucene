@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import org.apache.lucene.analysis.TokenStream;
@@ -53,6 +54,8 @@ import org.wltea.analyzer.lucene.IKAnalyzer;
 
 import com.zqy.sqllucene.cfg.DataBaseDefaultConfig;
 import com.zqy.sqllucene.pojo.Column;
+
+import test.ObjectExpression;
 
 public class SelectHandle {
 	 private String dataBaseName;
@@ -630,7 +633,44 @@ public class SelectHandle {
 		return field;
     	 
     }
-   
+    public  void select(LinkedList linkList){
+    	BooleanQuery booleanQuery = new BooleanQuery();
+		for(int i=0;i<linkList.size();i++){
+			Object object = linkList.get(i);
+			if(object instanceof LinkedList){
+				System.out.println("(");
+				select((LinkedList)object);
+				System.out.println(")");
+			}
+			if(object instanceof String){
+				System.out.println(object);
+				if(i+1<=linkList.size()){
+					Object objectExpression = linkList.get(i+1);
+						if(object instanceof ObjectExpression){
+							ObjectExpression ob = (ObjectExpression)objectExpression;
+							System.out.println(ob.getColumnname()+" "+ob.getExp()+" "+ob.getValue());
+							Occur occur=null;
+							if(((String) object).toLowerCase().equals("and")){
+								occur = Occur.MUST;
+							}else if(((String) object).toLowerCase().equals("or")){
+								occur = Occur.SHOULD;
+							}
+							booleanQuery.add(termQuery(ob.getColumnname(), ob.getValue()),occur);
+						}
+					}
+				}
+			if(i==0){
+				if(object instanceof ObjectExpression){
+					ObjectExpression ob = (ObjectExpression)object;
+					if(ob.getExp().equals("=")){
+						booleanQuery.add(termQuery(ob.getColumnname(), ob.getValue()), Occur.MUST);
+					}
+					System.out.println(ob.getColumnname()+" "+ob.getExp()+" "+ob.getValue());
+				}
+			}
+//			System.out.println(object);
+		}
+	}
    
     
     public static void main(String[] args) {
