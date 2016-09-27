@@ -633,15 +633,10 @@ public class SelectHandle {
 		return field;
     	 
     }
-    public  void select(LinkedList linkList){
+    public  BooleanQuery select(LinkedList linkList){
     	BooleanQuery booleanQuery = new BooleanQuery();
 		for(int i=0;i<linkList.size();i++){
 			Object object = linkList.get(i);
-			if(object instanceof LinkedList){
-				System.out.println("(");
-				select((LinkedList)object);
-				System.out.println(")");
-			}
 			if(object instanceof String){
 				System.out.println(object);
 				if(i+1<=linkList.size()){
@@ -657,9 +652,25 @@ public class SelectHandle {
 							}
 							booleanQuery.add(termQuery(ob.getColumnname(), ob.getValue()),occur);
 						}
+						if(object instanceof LinkedList){
+							System.out.println("(");
+							Occur occur=null;
+							if(((String) object).toLowerCase().equals("and")){
+								occur = Occur.MUST;
+							}else if(((String) object).toLowerCase().equals("or")){
+								occur = Occur.SHOULD;
+							}
+							booleanQuery.add(select((LinkedList)object), occur);
+							System.out.println(")");
+						}
 					}
 				}
 			if(i==0){
+				if(object instanceof LinkedList){
+					System.out.println("(");
+					booleanQuery.add(select((LinkedList)object), Occur.MUST);
+					System.out.println(")");
+				}
 				if(object instanceof ObjectExpression){
 					ObjectExpression ob = (ObjectExpression)object;
 					if(ob.getExp().equals("=")){
@@ -670,6 +681,7 @@ public class SelectHandle {
 			}
 //			System.out.println(object);
 		}
+		return booleanQuery;
 	}
    
     
