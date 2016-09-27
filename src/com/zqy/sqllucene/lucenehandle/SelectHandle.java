@@ -618,7 +618,7 @@ public class SelectHandle {
    		return list;
        }
     public List getResult(Query query,int currentPage,int pageSize){
-        return getResult(null,sort,currentPage,pageSize);
+        return getResult(query,sort,currentPage,pageSize);
       }
     public List getResult(Sort sort,int currentPage,int pageSize){
         return getResult(null,sort,currentPage,pageSize);
@@ -644,9 +644,14 @@ public class SelectHandle {
    /* 	PageBean pageBean = new PageBean();
     	pageBean.setCurrentPage(1);
     	pageBean.setPageSize(2);*/
-    	selectHandle.SetSort(new String[]{"type","price"}, new Boolean[]{false,false});
-    	//List list = selectHandle.getResult(selectHandle.termQuery("ename","qtq"),1,3);
-    	List list = selectHandle.getResult(1,100);
+    	//selectHandle.SetSort(new String[]{"type","price"}, new Boolean[]{false,false});
+    	
+    	Query query = selectHandle.termQuery("bookname","数据库");
+    	Query query1 = selectHandle.termQuery("bookname","编程");
+    	Query[] querys = new Query[]{query,query1};
+    	Occur[] occurs = new Occur[]{Occur.MUST,Occur.MUST};
+    	Query query2 = selectHandle.booleanQuery(querys, occurs);
+    	List list = selectHandle.getResult(query2,1,100);
     	System.out.println("size:"+list.size());
     	//list.stream().filter(l->l==null).forEach(x->{System.out.println(x);System.out.println("-----");});
     	list.forEach(x->{System.out.println(x);System.out.println("-----");});

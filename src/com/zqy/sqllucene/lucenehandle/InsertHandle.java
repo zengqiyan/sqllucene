@@ -164,7 +164,7 @@ public class InsertHandle {
 		 InsertHandle insertHandle= new InsertHandle();
 		 //insertHandle.insert("testDatabase", "insert into testTable(id,title,content) values(1010,'mytitle5','查询正则')");
 		 Book book = new Book(2,"西游记","xyj","小说",62.73,System.currentTimeMillis());
-		 Book book1 = new Book(10,"七天七数据库","qtqsjk","技术",96.23,System.currentTimeMillis());
+		 Book book1 = new Book(10,"数据库编程","sjkbc","技术",96.23,System.currentTimeMillis());
 		 Book book2 = new Book(4,"编程,编程","bcbc","社会",10.37,System.currentTimeMillis());
 		 Book book3 = new Book(5,"看清本质","kqbz","社会",10.37,System.currentTimeMillis());
 		 Book book4 = new Book(6,"数据库实战","sjksz","技术",77.13,System.currentTimeMillis());
