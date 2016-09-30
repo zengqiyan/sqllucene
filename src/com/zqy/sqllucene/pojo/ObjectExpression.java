@@ -1,4 +1,4 @@
-package test;
+package com.zqy.sqllucene.pojo;
 public class ObjectExpression {
 
 		//字段

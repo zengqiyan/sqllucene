@@ -21,11 +21,13 @@
  */
 package net.sf.jsqlparser.util;
 
+import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.*;
 import net.sf.jsqlparser.expression.operators.arithmetic.*;
 import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
 import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
 import net.sf.jsqlparser.expression.operators.relational.*;
+import net.sf.jsqlparser.parser.CCJSqlParserManager;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.delete.Delete;
@@ -34,6 +36,7 @@ import net.sf.jsqlparser.statement.replace.Replace;
 import net.sf.jsqlparser.statement.select.*;
 import net.sf.jsqlparser.statement.update.Update;
 
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,7 +66,6 @@ public class TableNamesFinder implements SelectVisitor, FromItemVisitor, Express
      * collected here and are not included in the tables - names anymore.
      */
     private List<String> otherItemNames;
-
     private List<String> columns;
     public List<String> getTableList(Statement statement) {
         init();
@@ -128,9 +130,11 @@ public class TableNamesFinder implements SelectVisitor, FromItemVisitor, Express
     @Override
     public void visit(Table tableName) {
         String tableWholeName = tableName.getFullyQualifiedName();
+       
         if (!otherItemNames.contains(tableWholeName.toLowerCase())
                 && !tables.contains(tableWholeName)) {
             tables.add(tableWholeName);
+            System.out.println(tableWholeName);
         }
     }
 
@@ -163,9 +167,7 @@ public class TableNamesFinder implements SelectVisitor, FromItemVisitor, Express
 
     @Override
     public void visit(Column tableColumn) {
-    	columns.add(tableColumn.getColumnName());
-    	System.out.println("tableColumn.getColumnName():"+tableColumn.getColumnName());
-    	System.out.println("tableColumn.getFullyQualifiedName():"+tableColumn.getFullyQualifiedName());
+    	if(tableColumn!=null)columns.add(tableColumn.getColumnName());
     }
 
     @Override
@@ -410,6 +412,7 @@ public class TableNamesFinder implements SelectVisitor, FromItemVisitor, Express
     protected void init() {
         otherItemNames = new ArrayList<String>();
         tables = new ArrayList<String>();
+        columns= new ArrayList<String>();
     }
 
     @Override
@@ -599,6 +602,7 @@ public class TableNamesFinder implements SelectVisitor, FromItemVisitor, Express
 
     @Override
     public void visit(Merge merge) {
+    	System.out.println("merge:"+merge.getTable().getName());
         tables.add(merge.getTable().getName());
         if (merge.getUsingTable() != null) {
             merge.getUsingTable().accept(this);
@@ -628,4 +632,10 @@ public class TableNamesFinder implements SelectVisitor, FromItemVisitor, Express
     public void visit(DateTimeLiteralExpression literal) {
 
     }
+    public static void main(String[] args) throws JSQLParserException {
+    	CCJSqlParserManager pm = new CCJSqlParserManager();
+    	TableNamesFinder tableNamesFinder = new TableNamesFinder();
+    	List<String> list = tableNamesFinder.getTableList(pm.parse(new StringReader("select abc.a from abc a,cde b where  cde like 'a?c^' and cd=2 or fg=1 and (hi=5 or ju=8)")));
+    	System.out.println(list);
+	}
 }

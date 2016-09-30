@@ -2,6 +2,8 @@ package test;
 
 import java.util.LinkedList;
 
+import com.zqy.sqllucene.pojo.ObjectExpression;
+
 import net.sf.jsqlparser.parser.CCJSqlParserManager;
 
 public class TestParser {

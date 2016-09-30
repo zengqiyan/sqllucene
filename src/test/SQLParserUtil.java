@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.zqy.sqllucene.pojo.ObjectExpression;
+
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.Expression;
@@ -59,42 +61,6 @@ public class SQLParserUtil {
 		}
 		return linkList;
 	}
-	public ExpressionTree getLevelObject(String SQL){
-		try {
-			e = getExpressionForSQL(SQL);
-		} catch (JSQLParserException e1) {
-			e1.printStackTrace();
-		}
-		ExpressionTree expression = new ExpressionTree();
-		expression = generateExpression(e, expression);
-		return expression;
-	}
-	public ExpressionTree generateExpression(Expression ex ,ExpressionTree et){
-		if(ex==null){
-			return null;
-		}
-		if(ex instanceof OrExpression||ex instanceof AndExpression){//如果是and or 连接
-			BinaryExpression be = (BinaryExpression)ex;
-			ExpressionTree leftExpressionTree = new ExpressionTree();
-			generateExpression(be.getLeftExpression(),leftExpressionTree);//设置左侧分离后的表达式
-			et.setLeftExpression(leftExpressionTree);
-			//设置连接符
-			et.setExpressionStr((ex instanceof OrExpression)?"OR":"AND");
-			ExpressionTree rightExpressionTree = new ExpressionTree();
-			generateExpression(be.getRightExpression(),rightExpressionTree);
-			et.setRightExpression(rightExpressionTree);
-		}else if(ex instanceof Parenthesis){//括号
-			LinkedList childList = new LinkedList();
-			Expression exp = getExpressionWithoutParenthesis(ex);//获取括号内 表达式
-			ExpressionTree childExpressionTree = new ExpressionTree();
-			generateExpression(exp,childExpressionTree); //添加下级内容
-			et.setExpressionTree(childExpressionTree);
-		}else{//单目表达式
-			et.setObjectExpression(processExpression(ex));
-		}
-		return et;
-	}
-	
 	private Object invokeMethod(Object obj, String methodFunc){
 		try {
 			Method method = obj.getClass().getMethod(methodFunc, null);
