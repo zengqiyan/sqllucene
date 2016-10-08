@@ -190,9 +190,8 @@ public class QueryHandle {
     * 通配符查询
     */
    public WildcardQuery wildcardQuery(String columnName,String keyWord){
-   	Term term =null;
        //String queryString = "?品*";
-		term = new Term(columnName, keyWord);
+	    Term term = new Term(columnName, keyWord);
 		WildcardQuery wildcardQuery = new WildcardQuery(term);
 		return wildcardQuery;
    }
@@ -200,7 +199,7 @@ public class QueryHandle {
  *   唯一区别就是SapnTermQuery可以得到Term的span跨度信息*/
    public SpanTermQuery spanTermQuery(String columnName,String keyWord,int end){
        //String queryString = "大王";
-   	Term term = new Term(columnName, keyWord);
+   		Term term = new Term(columnName, keyWord);
 		SpanTermQuery spanTermQuery = new SpanTermQuery(term);
 		return spanTermQuery;
    }
@@ -519,7 +518,7 @@ public class QueryHandle {
      ScoreDoc[] docs = topDocs.scoreDocs;
      return docs.length;
    }
- //true:降序
+    //true:降序
  	//false:升序
    public Sort getSort(String[] columnNames,Boolean[] bools){
 		  if(columnNames.length!=bools.length){
@@ -528,7 +527,11 @@ public class QueryHandle {
 		 SortField[] sortFields = new SortField[columnNames.length];
 		 List<Column> columnList = null;
 		 if(tableNames!=null && tableNames.length>0){
-			 columnList = dataBaseDefaultConfig.getColumns(dataBaseName,tableNames,columnNames);
+			 if(tableNames.length==1){
+				 columnList = dataBaseDefaultConfig.getColumns(dataBaseName,tableNames[0],columnNames); 
+			 }else{
+				 columnList = dataBaseDefaultConfig.getColumns(dataBaseName,tableNames,columnNames);
+			 }
 		 }else{
 			 columnList = dataBaseDefaultConfig.getColumns(dataBaseName,tableName,columnNames);
 		 }
@@ -564,7 +567,6 @@ public class QueryHandle {
  	}
 
    public List getResult(Query query,Sort sort,int offset,int rowCount){
-   	  
    	   if(query==null)query=new MatchAllDocsQuery();
           SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter("【","】"); //如果不指定参数的话，默认是加粗，即<b><b/>
           QueryScorer scorer = new QueryScorer(query);//计算得分，会初始化一个查询结果最高的得分
@@ -575,7 +577,8 @@ public class QueryHandle {
   		try {
   		   //int totalRecord = searchTotalRecord(getSearcher(),query);
   		  //System.out.println("共找到" + totalRecord + ":条记录");
-  		   if(sort==null) sort = Sort.RELEVANCE;
+  		  if(sort==null) sort = Sort.RELEVANCE;
+  		  if(rowCount==0)rowCount = searchTotalRecord(getSearcher(),query);
           TopFieldCollector c = TopFieldCollector.create(sort, offset+rowCount, false, false, false, false);
           getSearcher().search(query, c);
           for (ScoreDoc scoreDoc : c.topDocs(offset, rowCount).scoreDocs) {
@@ -649,14 +652,14 @@ public class QueryHandle {
   /* 	PageBean pageBean = new PageBean();
    	pageBean.setCurrentPage(1);
    	pageBean.setPageSize(2);*/
-   	queryHandle.setSort(new String[]{"type","price"}, new Boolean[]{false,false});
+   	//queryHandle.setSort(new String[]{"type","price"}, new Boolean[]{false,false});
    	Query query = queryHandle.termQuery("bookname","数据库");
    	Query query1 = queryHandle.termQuery("bookname","编程");
+   	Query query3 = queryHandle.fuzzyQuery("bookname","西",1);
    	Query[] querys = new Query[]{query,query1};
-   	Occur[] occurs = new Occur[]{Occur.MUST,Occur.MUST};
+   	Occur[] occurs = new Occur[]{Occur.SHOULD,Occur.SHOULD};
    	Query query2 = queryHandle.booleanQuery(querys, occurs);
-   	List list = queryHandle.getResult(1,100);
-   	String sql = "select * from book where bookname='数据库' or bookname = '编程' order by price desc limit 1,10";
+   	List list = queryHandle.getResult(query3,1,100);
    	//List list = queryHandle.select("testDatabase", sql);
    	System.out.println("size:"+list.size());
    	//list.stream().filter(l->l==null).forEach(x->{System.out.println(x);System.out.println("-----");});

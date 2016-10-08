@@ -6,6 +6,13 @@
       <column name="id" type="long"/>  
       <column name="title" type="string"/>  
       <column name="content" type="string"/> 
+    </table>
+    <table name="book" path="d:/test/testDatabase/book"> 
+      <column name="id" type="long"/>  
+      <column name="bookname" type="string"/>  
+      <column name="ename" type="string"/>
+      <column name="price" type="double"/> 
+      <column name="date" type="long"/> 
     </table> 
   </database> 
 </lucene_database>
