@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import com.zqy.sqllucene.pojo.DeleteBox;
 import com.zqy.sqllucene.pojo.ObjectExpression;
 import com.zqy.sqllucene.pojo.SelectBox;
 
@@ -22,81 +23,64 @@ import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
 import net.sf.jsqlparser.parser.CCJSqlParserManager;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
+import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.Join;
 import net.sf.jsqlparser.statement.select.OrderByElement;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.select.SelectItem;
 
-public class SelectParser{
-	private static final SelectParser single = new SelectParser();  
+public class DeleteParser{
+	private static final DeleteParser single = new DeleteParser();  
     //静态工厂方法   单例
-    public static SelectParser getInstance() {  
+    public static DeleteParser getInstance() {  
         return single;  
     }
-	public SelectBox selectParser(String sql){
+	public DeleteBox deleteParser(String sql){
 		LinkedList wheres = new LinkedList();
-		SelectBox selectBox = new SelectBox();
+		DeleteBox deleteBox = new DeleteBox();
 		try {
 			CCJSqlParserManager pm = new CCJSqlParserManager();
-			Select select = (Select) pm.parse(new StringReader(sql));
-			PlainSelect plainSelect =  (PlainSelect)select.getSelectBody();
-			//获取查询字段
-			List<String> queryColumns = new ArrayList<String>();
-			if(plainSelect.getSelectItems()!=null){
-				for(SelectItem selectItem:plainSelect.getSelectItems()){
-					queryColumns.add(selectItem.toString());
-				}
-			}
-			selectBox.setQueryColumns(queryColumns);
+			Delete delete = (Delete) pm.parse(new StringReader(sql));
 			//获取查询表
 		    List<String[]> tables = new ArrayList<String[]>();
-			Table table=null;
-			if(plainSelect.getFromItem() instanceof Table){
-				 table = (Table) plainSelect.getFromItem();
-				 String aliaName = "";
+			for(Table table :delete.getTables()){
+				String aliaName = "";
 				 if(table.getAlias()!=null){
 					aliaName = table.getAlias().getName();
 				  }
 				 tables.add(new String[]{table.getFullyQualifiedName(),aliaName});
 			}
-			if(plainSelect.getJoins()!=null){
-				for(Join join:plainSelect.getJoins()){
-					if(join.getRightItem() instanceof Table){
-					    table = (Table) join.getRightItem();
-					    String aliaName = "";
-					   if(table.getAlias()!=null){
-						 aliaName = table.getAlias().getName();
-					   }
-					    tables.add(new String[]{table.getFullyQualifiedName(),aliaName});
-					}
-				}
-			}
-			selectBox.setTables(tables);
-			
-			if(plainSelect.getWhere()!=null){
-				Expression e  = plainSelect.getWhere();
+			Table table = delete.getTable();
+			String aliaName = "";
+			 if(table.getAlias()!=null){
+				aliaName = table.getAlias().getName();
+			  }
+			tables.add(new String[]{table.getFullyQualifiedName(),aliaName});
+			deleteBox.setTables(tables);
+			if(delete.getWhere()!=null){
+				Expression e  = delete.getWhere();
 				e = getExpressionWithoutParenthesis(e);
 				//where子句解析
 				wheres = generateList(e, wheres);
-				selectBox.setWheres(wheres);
+				deleteBox.setWheres(wheres);
 			}
 			//order by
-			if(plainSelect.getOrderByElements()!=null){
+			if(delete.getOrderByElements()!=null){
 			List<String> orderBys = new ArrayList<String>();
-			for(OrderByElement orderByElement:plainSelect.getOrderByElements()){
+			for(OrderByElement orderByElement:delete.getOrderByElements()){
 				orderBys.add(orderByElement.toString().toLowerCase());
 			}
-			selectBox.setOrderBys(orderBys);
+			deleteBox.setOrderBys(orderBys);
 			}
-			if(plainSelect.getLimit()!=null){
-				selectBox.setLimitOffset((int)plainSelect.getLimit().getOffset());
-				selectBox.setLimitRowCount((int)plainSelect.getLimit().getRowCount());
+			if(delete.getLimit()!=null){
+				deleteBox.setLimitOffset((int)delete.getLimit().getOffset());
+				deleteBox.setLimitRowCount((int)delete.getLimit().getRowCount());
 			}
 		} catch (JSQLParserException e1) {
 			e1.printStackTrace();
 		}
-		return selectBox;
+		return deleteBox;
 	}
 	public LinkedList generateList(Expression ex , LinkedList wheres){
 		if(ex==null){
@@ -181,8 +165,8 @@ public class SelectParser{
 
     
 	public static void main(String[] args) {
-		SelectParser selectParser = new SelectParser();
-		selectParser.selectParser("select a.aa,b.bb from abc a,cde b where  a.cde like 'a?c^' and cd=2 or fg=1 and (hi=5 or ju=8) order by abc desc,cde limit 1,10");
+		DeleteParser deleteParser = new DeleteParser();
+		deleteParser.deleteParser("select a.aa,b.bb from abc a,cde b where  a.cde like 'a?c^' and cd=2 or fg=1 and (hi=5 or ju=8) order by abc desc,cde limit 1,10");
 		/*HashMap expressionMap = new HashMap<String, Object>();
 		expressionMap.put("1", "111");
 		expressionMap.put("2", "222");

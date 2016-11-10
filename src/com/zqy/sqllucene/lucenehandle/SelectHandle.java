@@ -198,8 +198,9 @@ public class SelectHandle {
     public static void main(String[] args) {
     	SelectHandle selectHandle = new SelectHandle();
     	String sql = "select * from book where  bookname like '编程'  order by price desc limit 1,10";
-    	String sql1 = "select * from book";
-    	List list = selectHandle.select("testDatabase", sql);
-     	list.forEach(x->{System.out.println(x);System.out.println("-----");});
+    	String sql1 = "select * from ry where ryid = '440111108978' order by ryid desc limit 0,10";
+        List list = selectHandle.select("testDatabase", sql1);
+    	list.forEach(x->{System.out.println(x);System.out.println("-----");});
+     	
     }
    }

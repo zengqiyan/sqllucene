@@ -1,9 +1,15 @@
 package test;
 import java.io.StringReader;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.zqy.sqllucene.lucenehandle.InsertHandle;
 import com.zqy.sqllucene.sqlparser.finder.ColumnNamesFinder;
 import com.zqy.sqllucene.sqlparser.finder.TableNamesFinder;
 
@@ -28,41 +34,20 @@ public class Test {
 		e.printStackTrace();
 	}
    }
-   public static void main(String[] args) throws JSQLParserException {
-	  List<String> list =  new ArrayList<String>();
-	  String[] strings = new String[100000000];
-	  for(int i=0;i<50000000;i++){
-		  list.add("testest");
-	  }
-	  for(int i=49999999;i<100000000;i++){
-		  list.add("testest1");
-	  }
-	  for(int i=0;i<50000000;i++){
-		  strings[i]="testest";
-	  }
-	  for(int i=49999999;i<100000000;i++){
-		  strings[i]="testest1";
-	  }
-	  String[] stringss = new String[]{"testest","testest1"};
-	  long start = System.currentTimeMillis();
-	  for(int i=0;i<stringss.length;i++){
-			for(int j=0;j<list.size();j++){
-					if(stringss.equals(list.get(i))){
-						list.remove(j);
-					}
-			}
-			
-		}
-	  long middle = System.currentTimeMillis();
-	  for(int i=0;i<stringss.length;i++){
-			for(int j=0;j<strings.length;j++){
-					if(stringss.equals(strings[i])){
-					}
-			}
-			
-		}
-	  long end = System.currentTimeMillis();
-	  System.out.println("list:"+(middle-start));
-	  System.out.println("string[]:"+(end-middle));
+   public static void main(String[] args) throws  ClassNotFoundException, SQLException {
+	   Class.forName("oracle.jdbc.driver.OracleDriver");
+	   String url="jdbc:oracle:thin:@192.168.1.234:1521:zhyz";
+	   String user="zhyz";
+	   String password="111";
+	   Connection con = DriverManager.getConnection(url, user, password);
+	   PreparedStatement pre = con.prepareStatement("select ryid,xbm,rylbm,xm,sfzh,csrq from ry");// 创建预编译语句对象，一般都是用这个而不用Statement
+	   ResultSet result  = pre.executeQuery();
+	   InsertHandle insertHandle= new InsertHandle();
+		 //insertHandle.insert("testDatabase", "insert into testTable(id,title,content) values(1010,'mytitle5','查询正则')");
+	   while(result.next()){
+		   insertHandle.insert("testDatabase", "insert into ry values('"+result.getString("ryid")+"','"+result.getString("xbm")+"'"
+		   		+ "            ,'"+result.getString("rylbm")+"','"+result.getString("xm")+"','"+result.getString("sfzh")+"'"
+		   				+      ",'"+result.getString("csrq")+"')");
+	   }
    }
 }

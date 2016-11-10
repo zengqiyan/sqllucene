@@ -69,6 +69,7 @@ public class QueryHandle {
 	 private String tableName;
 	 private String[] queryColumns;
 	 private Sort sort;
+	 private Highlighter highlighter;
 	 public void config(String dataBaseName,String[] tableNames){
 		 this.dataBaseName = dataBaseName;
 		 this.tableNames = tableNames;
@@ -598,7 +599,6 @@ public class QueryHandle {
              		  map.put(queryColumns[i], value);
              	 }
               }else{
-           	  
            	   List<Column> columnList = null;
            		 if(tableNames!=null && tableNames.length>0){
            			 columnList = dataBaseDefaultConfig.getColumns(dataBaseName,tableNames);
@@ -638,7 +638,6 @@ public class QueryHandle {
    }
    private String showHighlight(String field){
 		return field;
-   	 
    }
   
    public static void main(String[] args) {
