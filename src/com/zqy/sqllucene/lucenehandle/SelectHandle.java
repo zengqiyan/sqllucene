@@ -20,6 +20,7 @@ public class SelectHandle {
    	QueryHandle queryHandle = new QueryHandle();
    	BooleanQuery booleanQuery=null;
    	List<String[]> tables=null;
+   	//设置table
    	if(selectBox.getTables()!=null){
     		tables = selectBox.getTables();
     		String[] table = new String[tables.size()];
@@ -28,7 +29,7 @@ public class SelectHandle {
     		}
     		queryHandle.config(dataBaseName,table);
     	}
-   	
+   	//设置查询字段
    	if(selectBox.getQueryColumns()!=null){
    		if(!selectBox.getQueryColumns().get(0).equals("*")){
    			String[] queryColumns = selectBox.getQueryColumns().toArray(new String[selectBox.getQueryColumns().size()]);
@@ -36,9 +37,11 @@ public class SelectHandle {
    		}
    		
    	 }
+   	//设置where
     if(selectBox.getWheres()!=null){
        	booleanQuery = whereHandle(queryHandle,selectBox.getWheres());
    	}
+      //设置order by
        Sort sort=null;
        if(selectBox.getOrderBys()!=null){
        	List<String> orderBys = selectBox.getOrderBys();
@@ -71,27 +74,32 @@ public class SelectHandle {
 		return  queryHandle.getResult(booleanQuery, sort, offset, rowCount);
    	 
    }
-   private  BooleanQuery whereHandle(QueryHandle queryHandle,LinkedList linkList){
+   /**
+    * where子句处理器
+    * @param queryHandle
+    * @param linkList
+    * @return
+    */
+   private  BooleanQuery whereHandle(QueryHandle queryHandle,LinkedList wheres){
    	BooleanQuery booleanQuery = new BooleanQuery();
-		for(int i=0;i<linkList.size();i++){
-			Object object = linkList.get(i);
+		for(int i=0;i<wheres.size();i++){
+			Object object = wheres.get(i);
 			if(object instanceof String){
 				System.out.println(object);
-				if(i+1<=linkList.size()){
-					 Object node = linkList.get(i+1);
+				if(i+1<=wheres.size()){
+					 Object node = wheres.get(i+1);
                      orandExpressionHandle(queryHandle, booleanQuery, node, object.toString());
 				}
 				if(i==1){
-					 Object node = linkList.get(i-1);
+					 Object node = wheres.get(i-1);
 					 orandExpressionHandle(queryHandle, booleanQuery, node, object.toString());
 				}
 				}
-			if(linkList.size()==1){
-				 Object node = linkList.get(i);
+			if(wheres.size()==1){
+				 Object node = wheres.get(i);
 				 orandExpressionHandle(queryHandle, booleanQuery, node,null);
 			}
 		}
-		
 		return booleanQuery;
 	}
     private void orandExpressionHandle(QueryHandle queryHandle,BooleanQuery booleanQuery,Object node,String orand){
@@ -156,7 +164,6 @@ public class SelectHandle {
 			while(m.find()){  
 			query = queryHandle.wildcardQuery(columnName, "*"+m.group(1)+"*");
 			}
-			//System.out.println("%ddscds%".replaceAll("%.+%", "111sd"));
 		}else if(likeStr.matches("%(.+)")){
 			Pattern p = Pattern.compile("%(.+)");  
 			Matcher m = p.matcher(likeStr);  
