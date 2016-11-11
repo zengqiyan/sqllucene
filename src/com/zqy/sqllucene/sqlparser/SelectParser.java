@@ -76,9 +76,9 @@ public class SelectParser{
 			
 			if(plainSelect.getWhere()!=null){
 				Expression e  = plainSelect.getWhere();
-				e = getExpressionWithoutParenthesis(e);
+				e = WhereParseUtil.getExpressionWithoutParenthesis(e);
 				//where子句解析
-				wheres = generateList(e, wheres);
+				wheres = WhereParseUtil.generateList(e, wheres);
 				selectBox.setWheres(wheres);
 			}
 			//order by
@@ -98,88 +98,7 @@ public class SelectParser{
 		}
 		return selectBox;
 	}
-	public LinkedList generateList(Expression ex , LinkedList wheres){
-		if(ex==null){
-			return null;
-		}
-		if(ex instanceof OrExpression||ex instanceof AndExpression){//如果是and or 连接
-			BinaryExpression be = (BinaryExpression)ex;
-			
-			generateList(be.getLeftExpression(), wheres);//设置左侧分离后的表达式
-			
-			//设置连接符
-			wheres.add((ex instanceof OrExpression)?"OR":"AND");
-			
-			generateList(be.getRightExpression(), wheres);
 
-		}else if(ex instanceof Parenthesis){//括号
-			LinkedList childList = new LinkedList();
-			Expression exp = getExpressionWithoutParenthesis(ex);//获取括号内 表达式
-			wheres.add(childList);
-			generateList(exp,childList); //添加下级内容
-			
-		}else{//单目表达式
-			wheres.add(processExpression(ex));
-		}
-		return wheres;
-	}	
-	private Object invokeMethod(Object obj, String methodFunc){
-		try {
-			Method method = obj.getClass().getMethod(methodFunc, null);
-			return method.invoke(obj, null);
-		} catch (Exception e) {
-			return null;
-		}
-	}
-	
-	//解析单个表达式生成比较对象
-	protected ObjectExpression processExpression(Expression e){
-		ObjectExpression oe = new ObjectExpression();
-		Object columnObj = invokeMethod(e, "getLeftExpression");
-		if(columnObj instanceof LongValue){//如果解析后是 1=1
-			LongValue longValue = (LongValue)columnObj;
-			oe.setColumnname(longValue.getStringValue());
-		}else{
-			Column column = (Column)invokeMethod(e, "getLeftExpression");
-			oe.setColumnname(column.getColumnName());
-			
-		}
-		if (e instanceof BinaryExpression) {//对比表达式
-			BinaryExpression be = (BinaryExpression) e;
-			oe.setExp(be.getStringExpression());
-			if(be.getRightExpression() instanceof Function){
-				oe.setValue(invokeMethod(be.getRightExpression(), "toString"));
-			}else{
-				oe.setValue(invokeMethod(be.getRightExpression(), "getValue"));
-			}
-		}else{
-			oe.setExp((String)invokeMethod(e, "toString"));
-		}
-		return oe;
-	}
-	
-	//获取第一个不是括号的表达式
-	public Expression getExpressionForSQL(String sql) throws JSQLParserException{
-		CCJSqlParserManager pm = new CCJSqlParserManager();
-		PlainSelect plainSelect =  (PlainSelect)((Select) pm.parse(new StringReader(sql))).getSelectBody();
-		Expression e  = plainSelect.getWhere();
-		return getExpressionWithoutParenthesis(e);
-	}
-	
-	/**
-	 *  get Expression until instance is not Parenthesis
-	 */
-	protected Expression getExpressionWithoutParenthesis(Expression ex){
-		if(ex instanceof Parenthesis){
-			Expression child = ((Parenthesis)ex).getExpression();
-			return getExpressionWithoutParenthesis(child);
-		}else{
-			return ex;
-		}
-		
-	}
-
-    
 	public static void main(String[] args) {
 		SelectParser selectParser = new SelectParser();
 		selectParser.selectParser("select a.aa,b.bb from abc a,cde b where  a.cde like 'a?c^' and cd=2 or fg=1 and (hi=5 or ju=8) order by abc desc,cde limit 1,10");

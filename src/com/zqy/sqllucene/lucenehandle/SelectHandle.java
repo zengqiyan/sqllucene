@@ -6,6 +6,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.lucene.search.BooleanClause.Occur;
+import org.apache.lucene.search.highlight.SimpleHTMLFormatter;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
@@ -15,9 +16,10 @@ import com.zqy.sqllucene.sqlparser.SelectParser;
 
 
 public class SelectHandle {
+  private QueryHandle queryHandle = new QueryHandle(); 
   public  List select(String dataBaseName,String sql){
    	SelectBox selectBox =  SelectParser.getInstance().selectParser(sql);
-   	QueryHandle queryHandle = new QueryHandle();
+   	//QueryHandle queryHandle = new QueryHandle();
    	BooleanQuery booleanQuery=null;
    	List<String[]> tables=null;
    	//设置table
@@ -195,12 +197,18 @@ public class SelectHandle {
 		return query;
 	
     }
+    public void setHighlighter(String  prefix,String suffix){
+		  queryHandle.setHighlighter(prefix, suffix);
+	}
     public static void main(String[] args) {
     	SelectHandle selectHandle = new SelectHandle();
+    	selectHandle.setHighlighter("<<<<<", ">>>>>");
     	String sql = "select * from book where  bookname like '编程'  order by price desc limit 1,10";
-    	String sql1 = "select * from ry where ryid = '440111108978' order by ryid desc limit 0,10";
+    	String sql1 = "select * from ry  where ryid='440111109035' ";
+    	String sql2 = "select * from ry  order by ryid desc limit 0,10 ";
         List list = selectHandle.select("testDatabase", sql1);
-    	list.forEach(x->{System.out.println(x);System.out.println("-----");});
-     	
+        if(list!=null){
+        	list.forEach(x->{System.out.println(x);System.out.println("-----");});
+        }
     }
    }

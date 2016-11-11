@@ -142,7 +142,6 @@ public class DataBaseDefaultConfig implements DataBaseConfiguration{
 			throw new RuntimeException("表不存在！");
 		}
 		String tablePath = tableElement.attributeValue("path");
-		System.out.println(tablePath);
 		return tablePath;
 	}
 	public List<Table> getTables(String dataBaseName){

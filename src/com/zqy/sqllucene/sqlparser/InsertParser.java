@@ -61,7 +61,7 @@ public class InsertParser extends BaseParser {
 	        			if(column.getName().equals(field.getColumnName())){
 	        				field.setColumnName(column.getName());
 	        				field.setType(column.getType());
-	        				columnList.remove(j);
+	        				//columnList.remove(j);
 	        				break;
 	        			}
 	        		}
@@ -114,7 +114,6 @@ public class InsertParser extends BaseParser {
 	@Override
 	public void visit(Select select) {
 		// TODO Auto-generated method stub
-		
 	}
 	@Override
 	public void visit(Insert insert) {
@@ -221,5 +220,6 @@ public class InsertParser extends BaseParser {
 	public static void main(String[] args) {
 		 InsertHandle insertHandle= new InsertHandle();
 		 insertHandle.insert("testDatabase", "insert into testTable values(1002,'mytitle3','注：注：kclbm、kcid、nrid三个参数只需传其中一个，若传递多个参数优先级是：nrid > kcid > kclbmkclbm、kcid、nrid三个参数只需传其中一个，若传递多个参数优先级是：nrid > kcid > kclbm')");
+		 
 	}
 }
