@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<lucene_database> 
-  <database name="testDatabase" path="d:/test/testDatabase"> 
-    <table name="testTable" path="d:/test/testDatabase/testTable"> 
-      <column name="id" type="long"/>  
-      <column name="title" type="string"/>  
-      <column name="content" type="string"/> 
-    </table> 
-  </database> 
+<lucene_database>
+	<database name="testDatabase" path="d:/test/testDatabase">
+		<table name="testTable" path="d:/test/testDatabase/testTable">
+			<column name="id" type="long" />
+			<column name="title" type="string" />
+			<column name="content" type="string" />
+		</table>
+	</database>
 </lucene_database>
