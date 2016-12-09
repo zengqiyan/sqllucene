@@ -278,6 +278,17 @@ public SpanOrQuery spanOrQuery(SpanQuery... spanQuerys){
 		phraseQuery.setSlop(slop);
 		return phraseQuery;
  }
+ public Query parserQuery(String columnName,int slop,String keyWords) {
+	 Query query = null;
+        QueryParser parser = new QueryParser(Version.LUCENE_46, columnName,dataBaseDefaultConfig.getAnalyzer());
+        try {
+			 query = parser.parse(keyWords);
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return query;
+ }
  /*
   * 多短语查询
   * 查询结果为钢铁侠 或 钢铁情缘

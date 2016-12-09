@@ -3,6 +3,7 @@ package com.zqy.sqllucene.sqlparser;
 import java.io.StringReader;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -48,6 +49,7 @@ public class SelectParser{
 					queryColumns.add(selectItem.toString());
 				}
 			}
+			//Collections.reverse(queryColumns);
 			selectBox.setQueryColumns(queryColumns);
 			//获取查询表
 		    List<String[]> tables = new ArrayList<String[]>();

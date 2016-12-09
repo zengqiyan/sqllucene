@@ -149,8 +149,7 @@ public class DataBaseDefaultConfig implements DataBaseConfiguration{
 	}
 	public List<Column> getColumns(String dataBaseName,String tableName,String[] columnNames){
 		List<Column> columns = null;
-    	try {
-		Document document=load();
+    	Document document=load();
 		Element lucene_database = document.getRootElement();
 		
 		Element database  = XmlUtil.parse(lucene_database,"database","name", dataBaseName);
@@ -185,10 +184,7 @@ public class DataBaseDefaultConfig implements DataBaseConfiguration{
 				columns.add(column);
 			}
 		}
-		DataBaseDefaultConfig.getInstance().write(document);
-		} catch (DocumentException e) {
-			e.printStackTrace();
-		}
+		//DataBaseDefaultConfig.getInstance().write(document);
 		return columns;
 		
 	}
@@ -236,6 +232,50 @@ public class DataBaseDefaultConfig implements DataBaseConfiguration{
 		}
 		}
 		return columns;
+	}
+	public String[] getColumnNames(String dataBaseName,String[] tableNames){
+		String[] columnNames =null;
+    	Document document=load();
+		Element lucene_database = document.getRootElement();
+		Element database  = XmlUtil.parse(lucene_database,"database","name", dataBaseName);
+		if(database==null){
+			throw new RuntimeException("数据库不存在！");
+		}
+		for(int i=0;i<tableNames.length;i++){
+		Element tableElement  = XmlUtil.parse(database,"table","name",tableNames[i]);
+		if(tableElement==null){
+			throw new RuntimeException("表\""+tableNames[i]+"\"不存在！");
+		}
+		List<Element> columnElements = tableElement.elements("column");
+		columnNames = new String[columnElements.size()];
+		int index=0;
+		for(Element columnElement:columnElements){
+			columnNames[index] = columnElement.attributeValue("name");
+			index++;
+		}
+		}
+		return columnNames;
+	}
+	public String[] getColumnNames(String dataBaseName,String tableName){
+		String[] columnNames =null;
+    	Document document=load();
+		Element lucene_database = document.getRootElement();
+		Element database  = XmlUtil.parse(lucene_database,"database","name", dataBaseName);
+		if(database==null){
+			throw new RuntimeException("数据库不存在！");
+		}
+		Element tableElement  = XmlUtil.parse(database,"table","name",tableName);
+		if(tableElement==null){
+			throw new RuntimeException("表\""+tableName+"\"不存在！");
+		}
+		List<Element> columnElements = tableElement.elements("column");
+		columnNames = new String[columnElements.size()];
+		int index=0;
+		for(Element columnElement:columnElements){
+			columnNames[index] = columnElement.attributeValue("name");
+			index++;
+		}
+		return columnNames;
 	}
 	public List<Column> getColumns(String dataBaseName,String tableName){
 		return getColumns(dataBaseName,tableName,null);

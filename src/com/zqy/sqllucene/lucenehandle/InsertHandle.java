@@ -22,6 +22,7 @@ import org.wltea.analyzer.lucene.IKAnalyzer;
 import test.Book;
 
 import com.zqy.sqllucene.cfg.DataBaseDefaultConfig;
+import com.zqy.sqllucene.index.IndexHandle;
 import com.zqy.sqllucene.pojo.Column;
 import com.zqy.sqllucene.pojo.DataBase;
 import com.zqy.sqllucene.pojo.Field;
@@ -44,7 +45,7 @@ public class InsertHandle {
 	        	LogUtil.printLog("插入数据开始...");
 	        	LogUtil.printLog("数据库："+dataBaseName);
 	        	LogUtil.printLog("表："+tableName);
-	            //1、创建Directory
+	         /*   //1、创建Directory
 	        	DataBase dataBase = DataBaseDefaultConfig.getInstance().getDataBaseByName(dataBaseName);
 	        	String tablePath = dataBase.getPath()+"/"+tableName;
 	        	File tableFile = new File(tablePath);
@@ -56,7 +57,8 @@ public class InsertHandle {
 	        	Analyzer analyzer = DataBaseDefaultConfig.getInstance().getAnalyzer();
 	            IndexWriterConfig iwConfig = new IndexWriterConfig(Version.LUCENE_46,analyzer);
 	            iwConfig.setMaxBufferedDocs(100);  
-	            writer = new IndexWriter(directory, iwConfig);
+	            writer = new IndexWriter(directory, iwConfig);*/
+	            writer = IndexHandle.getIndexWriter(dataBaseName, tableName);
 	            //3、创建document对象
 	            //4、为document添加field对象
 	            //writer.deleteAll();
@@ -85,13 +87,6 @@ public class InsertHandle {
 	        	LogUtil.printLog("插入数据开始...");
 	        	LogUtil.printLog("数据库："+dataBaseName);
 	        	LogUtil.printLog("表："+tableName);
-	            //1、创建Directory
-	        	DataBase dataBase = DataBaseDefaultConfig.getInstance().getDataBaseByName(dataBaseName);
-	        	String tablePath = dataBase.getPath()+"/"+tableName;
-	        	File tableFile = new File(tablePath);
-	        	if(!tableFile.exists()){
-	        		throw new RuntimeException("表不存在！");
-	        	}
 	          	java.lang.reflect.Field[] reflectFields = data.getClass().getDeclaredFields();//获得对象所有属性
 	        	java.lang.reflect.Field.setAccessible(reflectFields,true); 
 	        	List<Column> columnList = 
@@ -111,12 +106,20 @@ public class InsertHandle {
 	        			}
 	        		}
 	    		}
+	        	/* //1、创建Directory
+	        	DataBase dataBase = DataBaseDefaultConfig.getInstance().getDataBaseByName(dataBaseName);
+	        	String tablePath = dataBase.getPath()+"/"+tableName;
+	        	File tableFile = new File(tablePath);
+	        	if(!tableFile.exists()){
+	        		throw new RuntimeException("表不存在！");
+	        	}
 	        	Directory directory =  FSDirectory.open(tableFile);//在硬盘上生成Directory;
 	            //2、创建IndexWriter
 	        	Analyzer analyzer = DataBaseDefaultConfig.getInstance().getAnalyzer();
 	            IndexWriterConfig iwConfig = new IndexWriterConfig(Version.LUCENE_46,analyzer);
 	            iwConfig.setMaxBufferedDocs(100);  
-	            writer = new IndexWriter(directory, iwConfig);
+	            writer = new IndexWriter(directory, iwConfig);*/
+	            writer = IndexHandle.getIndexWriter(dataBaseName, tableName);
 	            //3、创建document对象
 	            //4、为document添加field对象
 	            //writer.deleteAll();
@@ -162,7 +165,7 @@ public class InsertHandle {
 	
 	 public static void main(String[] args) {
 		 InsertHandle insertHandle= new InsertHandle();
-		 //insertHandle.insert("testDatabase", "insert into testTable(id,title,content) values(1010,'mytitle5','查询正则')");
+		
 		 Book book = new Book(2,"西游记","xyj","小说",62.73,System.currentTimeMillis());
 		 Book book1 = new Book(10,"数据库编程","sjkbc","技术",96.23,System.currentTimeMillis());
 		 Book book2 = new Book(4,"编程,编程","bcbc","社会",10.37,System.currentTimeMillis());
@@ -171,15 +174,17 @@ public class InsertHandle {
 		 Book book5 = new Book(7,"编程宝典","bcbd","技术",100.3,System.currentTimeMillis());
 		 Book book6= new Book(8,"职场关系论","zcgxl","职场",52.23,System.currentTimeMillis());
 		 Book book7= new Book(9,"健康生活","jksh","生活",20.47,System.currentTimeMillis());
+		 Book book8= new Book(8,"职场关系论","zcgxl","职场",52.23,System.currentTimeMillis());
+		 Book book9= new Book(9,"健康生活","jksh","生活",20.47,System.currentTimeMillis());
 		 List<Book> list = new ArrayList<Book>();
-		 list.add(book);
-		 list.add(book2);
-		 list.add(book3);
-		 list.add(book4);
-		 list.add(book5);
-		 list.add(book6);
-		 list.add(book7);
+		
 		 //list.forEach(l->insertHandle.insert("testDatabase", "book",l));
-		 insertHandle.insert("testDatabase", "book",book1);
+		 long start = System.currentTimeMillis();
+		 //insertHandle.insert("testDatabase", "book",book1);
+		 for(int i=0;i<100;i++){
+			 insertHandle.insert("testDatabase", "insert into testTable(id,title,content) values(1010,'mytitle5','查询正则')");
+		 }
+		 long end = System.currentTimeMillis();
+		 System.out.println("插入花费时间："+(end-start));
 	}
 }

@@ -104,7 +104,7 @@ public class CreateHandle {
     	database.setName("testDatabase");
     	database.setPath("d:/test/testDatabase");
     	createHandle.createDataBase(database);*/
-    	createHandle.createTable("create table testDatabase.ry(ryid string,xbm string,rylbm string,xm string,sfzh string,csrq string)");
+    	createHandle.createTable("create table testDatabase.novel(id string,name string,content string,size string)");
     	
 	}
 }

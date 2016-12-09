@@ -1,7 +1,9 @@
 package com.zqy.sqllucene.lucenehandle;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -10,6 +12,8 @@ import org.apache.lucene.search.highlight.SimpleHTMLFormatter;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
+
+import com.zqy.sqllucene.lucenehandle.query.QueryHandle;
 import com.zqy.sqllucene.pojo.ObjectExpression;
 import com.zqy.sqllucene.pojo.SelectBox;
 import com.zqy.sqllucene.sqlparser.SelectParser;
@@ -160,7 +164,13 @@ public class SelectHandle {
     }
     private Query likeHandle(QueryHandle queryHandle,String columnName,String likeStr){
     	Query query=null;
-		if(likeStr.matches("%(.+)%")){
+    	if(likeStr.matches("\\[(.+)\\]")){
+			Pattern p = Pattern.compile("\\[(.+)\\]");  
+			Matcher m = p.matcher(likeStr);  
+			while(m.find()){  
+			query = queryHandle.parserQuery(columnName,1,m.group(1));
+			}
+		}else if(likeStr.matches("%(.+)%")){
 			Pattern p = Pattern.compile("%(.+)%");  
 			Matcher m = p.matcher(likeStr);  
 			while(m.find()){  
@@ -202,13 +212,22 @@ public class SelectHandle {
 	}
     public static void main(String[] args) {
     	SelectHandle selectHandle = new SelectHandle();
-    	selectHandle.setHighlighter("<<<<<", ">>>>>");
-    	String sql = "select * from book where  bookname like '编程'  order by price desc limit 1,10";
+    	selectHandle.setHighlighter("【", "】");
+    	String sql = "select * from book where  bookname like '[编程 数据库]'  order by price desc limit 1,10";
     	String sql1 = "select * from ry  where ryid='440111109035' ";
-    	String sql2 = "select * from ry  order by ryid desc limit 0,10 ";
-        List list = selectHandle.select("testDatabase", sql1);
+    	String sql2 = "select bt from wz where bt like '%广东%' order by wzid desc limit 2,5";
+    	String sql3 = "select id,name,count,size from novel limit 1,1";
+    	String sql4 = "select name,content from novel where content like '%军队%' limit 1,5";
+    	long start = System.currentTimeMillis();
+        List list = selectHandle.select("testDatabase", sql);
+        //Collections.reverse(list);
+        long end = System.currentTimeMillis();
+        System.out.println(list);
         if(list!=null){
-        	list.forEach(x->{System.out.println(x);System.out.println("-----");});
+        	list.forEach(x->{
+        		System.out.println(x);System.out.println("-----");});
         }
+        
+        System.out.println("花费时间："+((end-start)));
     }
    }
